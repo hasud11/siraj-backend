@@ -1,27 +1,31 @@
 const express = require("express");
+const cors = require("cors");
 
 const app = express();
 
+// Middleware
+app.use(cors());
 app.use(express.json());
 
-// اختبار أن الـ Backend يعمل
+// الصفحة الرئيسية
+app.get("/", (req, res) => {
+  res.json({
+    service: "Siraj AI",
+    status: "running",
+    message: "Siraj AI backend is running successfully"
+  });
+});
+
+// فحص صحة الـ Backend
 app.get("/health", (req, res) => {
   res.json({
     status: "ok",
     service: "siraj-backend",
-    message: "Siraj AI backend is running"
+    message: "Siraj AI backend is healthy"
   });
 });
 
-// استقبال طلبات مستقبلية من تطبيق سِراج AI
-app.get("/", (req, res) => {
-  res.json({
-    service: "Siraj AI",
-    status: "running"
-  });
-});
-
-// Render يوفر PORT تلقائياً
+// Render يحدد PORT تلقائياً
 const PORT = process.env.PORT || 10000;
 
 app.listen(PORT, "0.0.0.0", () => {
