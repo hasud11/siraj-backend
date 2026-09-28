@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+require("dotenv").config();
 
 const app = express();
 
@@ -12,20 +13,20 @@ app.get("/", (req, res) => {
   res.json({
     service: "Siraj AI",
     status: "running",
-    message: "Siraj AI backend is running successfully"
+    message: "Siraj AI backend is running"
   });
 });
 
-// فحص صحة الـ Backend
+// فحص حالة الخادم
 app.get("/health", (req, res) => {
   res.json({
     status: "ok",
     service: "siraj-backend",
-    message: "Siraj AI backend is healthy"
+    message: "Siraj AI backend is running"
   });
 });
 
-// Render يحدد PORT تلقائياً
+// Render يوفر PORT تلقائياً
 const PORT = process.env.PORT || 10000;
 
 app.listen(PORT, "0.0.0.0", () => {

@@ -6,11 +6,7 @@
   "scripts": {
     "start": "node index.js"
   },
-  "keywords": [
-    "siraj",
-    "ai",
-    "backend"
-  ],
+  "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
