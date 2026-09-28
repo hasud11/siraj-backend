@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const OpenAI = require("openai");
 require("dotenv").config();
 
 const app = express();
@@ -7,30 +8,32 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ===============================
-// Health Check
-// ===============================
+// OpenAI
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+// اختبار أن الـ Backend يعمل
 app.get("/health", (req, res) => {
   res.json({
     status: "ok",
     service: "siraj-backend",
-    message: "Siraj AI backend is running"
+    message: "Siraj AI backend is running",
   });
 });
 
-// ===============================
-// Home
-// ===============================
+// الصفحة الرئيسية
 app.get("/", (req, res) => {
   res.json({
     service: "Siraj AI",
-    status: "running"
+    status: "running",
+    message: "Siraj AI backend is ready",
   });
 });
 
-// ===============================
-// AI Chat - اختبار أولي
-// ===============================
+// ================================
+// Siraj AI Chat API
+// ================================
 app.post("/api/ai/chat", async (req, res) => {
   try {
     const { message } = req.body;
@@ -38,29 +41,40 @@ app.post("/api/ai/chat", async (req, res) => {
     if (!message || typeof message !== "string") {
       return res.status(400).json({
         success: false,
-        error: "message is required"
+        error: "message is required",
       });
     }
 
-    res.json({
-      success: true,
-      message: message,
-      reply: "وصلت رسالتك إلى Siraj AI Backend بنجاح."
+    const response = await openai.responses.create({
+      model: "gpt-5-mini",
+      input: [
+        {
+          role: "system",
+          content:
+            "أنت سِراج AI، مساعد ذكي عربي. أجب بوضوح واختصار وبأسلوب احترافي ومفيد.",
+        },
+        {
+          role: "user",
+          content: message,
+        },
+      ],
     });
 
+    res.json({
+      success: true,
+      reply: response.output_text,
+    });
   } catch (error) {
-    console.error("AI Chat Error:", error);
+    console.error("Siraj AI Error:", error);
 
     res.status(500).json({
       success: false,
-      error: "Internal server error"
+      error: "AI request failed",
     });
   }
 });
 
-// ===============================
-// Server
-// ===============================
+// Render يوفر PORT تلقائياً
 const PORT = process.env.PORT || 10000;
 
 app.listen(PORT, "0.0.0.0", () => {
