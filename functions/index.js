@@ -1,8 +1,21 @@
+
 const express = require("express");
 const cors = require("cors");
 const OpenAI = require("openai");
-const { initializeApp, cert } = require("firebase-admin/app");
-const { getAuth } = require("firebase-admin/auth");
+
+const {
+  initializeApp,
+  cert,
+} = require("firebase-admin/app");
+
+const {
+  getAuth,
+} = require("firebase-admin/auth");
+
+const {
+  getFirestore,
+} = require("firebase-admin/firestore");
+
 require("dotenv").config();
 
 const app = express();
@@ -16,10 +29,13 @@ app.use(express.json());
 
 let firebaseReady = false;
 let firebaseAuth = null;
+let firestore = null;
 
 try {
   if (!process.env.FIREBASE_SERVICE_ACCOUNT) {
-    throw new Error("FIREBASE_SERVICE_ACCOUNT is missing");
+    throw new Error(
+      "FIREBASE_SERVICE_ACCOUNT is missing"
+    );
   }
 
   const serviceAccount = JSON.parse(
@@ -31,10 +47,13 @@ try {
   });
 
   firebaseAuth = getAuth(firebaseApp);
+  firestore = getFirestore(firebaseApp);
 
   firebaseReady = true;
 
-  console.log("Firebase Admin initialized successfully");
+  console.log(
+    "Firebase Admin initialized successfully"
+  );
 } catch (error) {
   console.error(
     "Firebase Admin initialization failed:",
@@ -47,7 +66,9 @@ try {
 // ========================================
 
 if (!process.env.OPENAI_API_KEY) {
-  console.error("OPENAI_API_KEY is missing");
+  console.error(
+    "OPENAI_API_KEY is missing"
+  );
 }
 
 const openai = new OpenAI({
@@ -160,7 +181,11 @@ const SIRAJ_INSTRUCTIONS = `
 // Firebase Authentication Middleware
 // ========================================
 
-async function verifyFirebaseToken(req, res, next) {
+async function verifyFirebaseToken(
+  req,
+  res,
+  next
+) {
   try {
     if (!firebaseReady || !firebaseAuth) {
       return res.status(500).json({
@@ -169,16 +194,21 @@ async function verifyFirebaseToken(req, res, next) {
       });
     }
 
-    const authHeader = req.headers.authorization;
+    const authHeader =
+      req.headers.authorization;
 
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    if (
+      !authHeader ||
+      !authHeader.startsWith("Bearer ")
+    ) {
       return res.status(401).json({
         success: false,
         error: "AUTH_REQUIRED",
       });
     }
 
-    const idToken = authHeader.substring(7).trim();
+    const idToken =
+      authHeader.substring(7).trim();
 
     if (!idToken) {
       return res.status(401).json({
@@ -188,7 +218,9 @@ async function verifyFirebaseToken(req, res, next) {
     }
 
     const decodedToken =
-      await firebaseAuth.verifyIdToken(idToken);
+      await firebaseAuth.verifyIdToken(
+        idToken
+      );
 
     req.user = decodedToken;
 
@@ -217,7 +249,11 @@ app.get("/health", (req, res) => {
     firebase: firebaseReady
       ? "ready"
       : "not_ready",
-    message: "Siraj AI backend is running",
+    firestore: firestore
+      ? "ready"
+      : "not_ready",
+    message:
+      "Siraj AI backend is running",
   });
 });
 
@@ -229,7 +265,8 @@ app.get("/", (req, res) => {
   res.json({
     service: "Siraj AI",
     status: "running",
-    message: "Siraj AI backend is ready",
+    message:
+      "Siraj AI backend is ready",
   });
 });
 
@@ -242,7 +279,10 @@ app.post(
   verifyFirebaseToken,
   async (req, res) => {
     try {
-      const { message, history } = req.body;
+      const {
+        message,
+        history,
+      } = req.body;
 
       // ----------------------------------------
       // Validate message
@@ -254,7 +294,8 @@ app.post(
       ) {
         return res.status(400).json({
           success: false,
-          error: "message is required",
+          error:
+            "message is required",
         });
       }
 
@@ -264,7 +305,8 @@ app.post(
       if (!cleanMessage) {
         return res.status(400).json({
           success: false,
-          error: "message is required",
+          error:
+            "message is required",
         });
       }
 
@@ -275,26 +317,36 @@ app.post(
       let conversationHistory = [];
 
       if (Array.isArray(history)) {
-        conversationHistory = history
-          .filter(
-            (item) =>
-              item &&
-              typeof item === "object" &&
-              typeof item.role === "string" &&
-              typeof item.content === "string"
-          )
-          .filter(
-            (item) =>
-              item.role === "user" ||
-              item.role === "assistant"
-          )
-          .slice(-12)
-          .map((item) => ({
-            role: item.role,
-            content: item.content
-              .trim()
-              .slice(0, 4000),
-          }));
+        conversationHistory =
+          history
+            .filter(
+              (item) =>
+                item &&
+                typeof item ===
+                  "object" &&
+                typeof item.role ===
+                  "string" &&
+                typeof item.content ===
+                  "string"
+            )
+            .filter(
+              (item) =>
+                item.role ===
+                  "user" ||
+                item.role ===
+                  "assistant"
+            )
+            .slice(-12)
+            .map((item) => ({
+              role: item.role,
+              content:
+                item.content
+                  .trim()
+                  .slice(
+                    0,
+                    4000
+                  ),
+            }));
       }
 
       // ----------------------------------------
@@ -304,12 +356,17 @@ app.post(
       const input = [
         {
           role: "system",
-          content: SIRAJ_INSTRUCTIONS,
+          content:
+            SIRAJ_INSTRUCTIONS,
         },
         ...conversationHistory,
         {
           role: "user",
-          content: cleanMessage.slice(0, 4000),
+          content:
+            cleanMessage.slice(
+              0,
+              4000
+            ),
         },
       ];
 
@@ -318,10 +375,12 @@ app.post(
       // ----------------------------------------
 
       const response =
-        await openai.responses.create({
-          model: "gpt-5-mini",
-          input: input,
-        });
+        await openai.responses.create(
+          {
+            model: "gpt-5-mini",
+            input: input,
+          }
+        );
 
       const reply =
         response.output_text?.trim() ||
@@ -343,7 +402,8 @@ app.post(
 
       return res.status(500).json({
         success: false,
-        error: "AI request failed",
+        error:
+          "AI request failed",
       });
     }
   }
