@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const OpenAI = require("openai");
+const admin = require("firebase-admin");
 require("dotenv").config();
 
 const app = express();
@@ -8,16 +9,51 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ================================
+// ========================================
+// Firebase Admin
+// ========================================
+
+let firebaseReady = false;
+
+try {
+  if (!process.env.FIREBASE_SERVICE_ACCOUNT) {
+    throw new Error("FIREBASE_SERVICE_ACCOUNT is missing");
+  }
+
+  const serviceAccount = JSON.parse(
+    process.env.FIREBASE_SERVICE_ACCOUNT
+  );
+
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+  });
+
+  firebaseReady = true;
+
+  console.log("Firebase Admin initialized successfully");
+} catch (error) {
+  console.error(
+    "Firebase Admin initialization failed:",
+    error.message
+  );
+}
+
+// ========================================
 // OpenAI
-// ================================
+// ========================================
+
+if (!process.env.OPENAI_API_KEY) {
+  console.error("OPENAI_API_KEY is missing");
+}
+
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// ================================
+// ========================================
 // Siraj AI Instructions
-// ================================
+// ========================================
+
 const SIRAJ_INSTRUCTIONS = `
 أنت "سِراج"، مساعد عربي ذكي متخصص في الإرشاد الروحي الهادئ والآمن.
 
@@ -27,7 +63,7 @@ const SIRAJ_INSTRUCTIONS = `
 - لا تكن آلياً أو جافاً.
 - اجعل إجاباتك مفهومة ومباشرة.
 - استخدم العناوين والنقاط عندما تساعد على تنظيم الإجابة.
-- استخدم الرموز التعبيرية باعتدال فقط عند الحاجة.
+- استخدم الرموز التعبيرية باعتدال.
 - لا تطل الإجابة دون داعٍ.
 
 مجالات سِراج:
@@ -45,6 +81,7 @@ const SIRAJ_INSTRUCTIONS = `
 
 1. السحر والعين والحسد:
 لا تجزم أبداً بأن المستخدم مسحور أو مصاب بالعين أو الحسد.
+
 لا تقل:
 "أنت مسحور"
 "فلان سحرك"
@@ -56,8 +93,8 @@ const SIRAJ_INSTRUCTIONS = `
 "هناك أسباب متعددة يمكن أن تفسر ما تشعر به."
 "يمكنك الالتزام بالأذكار والرقية الشرعية دون الدخول في الخوف أو الاتهامات."
 
-2. لا تشجع على الخوف أو الشك أو paranoia.
-إذا كان المستخدم خائفاً، ساعده على الهدوء والتنفس وتنظيم أفكاره والعودة إلى خطوات عملية وآمنة.
+2. لا تشجع على الخوف أو الشك.
+إذا كان المستخدم خائفاً، ساعده على الهدوء وتنظيم أفكاره والعودة إلى خطوات عملية وآمنة.
 
 3. الرقية الشرعية:
 يمكنك شرح الرقية الشرعية الذاتية المشروعة.
@@ -90,7 +127,6 @@ const SIRAJ_INSTRUCTIONS = `
 
 7. الخصوصية:
 لا تطلب من المستخدم معلومات شخصية غير ضرورية.
-تعامل مع المحادثة على أنها مساحة خاصة ومحترمة.
 
 8. أسلوب الحوار:
 اقرأ سياق المحادثة قبل الإجابة.
@@ -98,7 +134,7 @@ const SIRAJ_INSTRUCTIONS = `
 إذا كان السؤال واضحاً، أجب مباشرة.
 إذا كان يحتاج توضيحاً، اسأل سؤالاً واحداً أو سؤالين فقط.
 
-9. في الحالات الطارئة:
+9. الحالات الطارئة:
 إذا ذكر المستخدم خطراً فورياً على نفسه أو شخص آخر أو حالة طبية طارئة، وجّهه بوضوح إلى خدمات الطوارئ أو المساعدة الطبية المحلية المناسبة.
 
 10. الهدف الأساسي:
@@ -116,20 +152,69 @@ const SIRAJ_INSTRUCTIONS = `
 اجعل المستخدم يشعر بأنه يتحدث مع مساعد محترم وهادئ يفهمه ويأخذ مخاوفه بجدية دون تضخيمها.
 `;
 
-// ================================
+// ========================================
+// Firebase Authentication Middleware
+// ========================================
+
+async function verifyFirebaseToken(req, res, next) {
+  try {
+    if (!firebaseReady) {
+      return res.status(500).json({
+        success: false,
+        error: "FIREBASE_NOT_CONFIGURED",
+      });
+    }
+
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({
+        success: false,
+        error: "AUTH_REQUIRED",
+      });
+    }
+
+    const idToken = authHeader.substring(7);
+
+    const decodedToken = await admin
+      .auth()
+      .verifyIdToken(idToken);
+
+    req.user = decodedToken;
+
+    next();
+  } catch (error) {
+    console.error(
+      "Firebase Auth Error:",
+      error.message
+    );
+
+    return res.status(401).json({
+      success: false,
+      error: "INVALID_AUTH_TOKEN",
+    });
+  }
+}
+
+// ========================================
 // Health Check
-// ================================
+// ========================================
+
 app.get("/health", (req, res) => {
   res.json({
     status: "ok",
     service: "siraj-backend",
+    firebase: firebaseReady
+      ? "ready"
+      : "not_ready",
     message: "Siraj AI backend is running",
   });
 });
 
-// ================================
+// ========================================
 // Home
-// ================================
+// ========================================
+
 app.get("/", (req, res) => {
   res.json({
     service: "Siraj AI",
@@ -138,96 +223,123 @@ app.get("/", (req, res) => {
   });
 });
 
-// ================================
+// ========================================
 // Siraj AI Chat API
-// ================================
-app.post("/api/ai/chat", async (req, res) => {
-  try {
-    const { message, history } = req.body;
+// ========================================
 
-    // التحقق من الرسالة
-    if (!message || typeof message !== "string") {
-      return res.status(400).json({
+app.post(
+  "/api/ai/chat",
+  verifyFirebaseToken,
+  async (req, res) => {
+    try {
+      const { message, history } = req.body;
+
+      // ----------------------------------------
+      // Validate message
+      // ----------------------------------------
+
+      if (
+        !message ||
+        typeof message !== "string"
+      ) {
+        return res.status(400).json({
+          success: false,
+          error: "message is required",
+        });
+      }
+
+      // ----------------------------------------
+      // Clean conversation history
+      // ----------------------------------------
+
+      let conversationHistory = [];
+
+      if (Array.isArray(history)) {
+        conversationHistory = history
+          .filter(
+            (item) =>
+              item &&
+              typeof item === "object" &&
+              typeof item.role === "string" &&
+              typeof item.content === "string"
+          )
+          .filter(
+            (item) =>
+              item.role === "user" ||
+              item.role === "assistant"
+          )
+          .slice(-12)
+          .map((item) => ({
+            role: item.role,
+            content: item.content.slice(0, 4000),
+          }));
+      }
+
+      // ----------------------------------------
+      // Build AI input
+      // ----------------------------------------
+
+      const input = [
+        {
+          role: "system",
+          content: SIRAJ_INSTRUCTIONS,
+        },
+        ...conversationHistory,
+        {
+          role: "user",
+          content: message.trim().slice(0, 4000),
+        },
+      ];
+
+      // ----------------------------------------
+      // OpenAI
+      // ----------------------------------------
+
+      const response =
+        await openai.responses.create({
+          model: "gpt-5-mini",
+          input,
+        });
+
+      const reply =
+        response.output_text?.trim() ||
+        "عذراً، لم أتمكن من إعداد إجابة الآن.";
+
+      // ----------------------------------------
+      // Response
+      // ----------------------------------------
+
+      return res.json({
+        success: true,
+        reply,
+      });
+    } catch (error) {
+      console.error(
+        "Siraj AI Error:",
+        error
+      );
+
+      return res.status(500).json({
         success: false,
-        error: "message is required",
+        error: "AI request failed",
       });
     }
-
-    // ================================
-    // تنظيف سجل المحادثة
-    // ================================
-    let conversationHistory = [];
-
-    if (Array.isArray(history)) {
-      conversationHistory = history
-        .filter(
-          (item) =>
-            item &&
-            typeof item === "object" &&
-            typeof item.role === "string" &&
-            typeof item.content === "string"
-        )
-        .filter(
-          (item) =>
-            item.role === "user" ||
-            item.role === "assistant"
-        )
-        .slice(-12)
-        .map((item) => ({
-          role: item.role,
-          content: item.content.slice(0, 4000),
-        }));
-    }
-
-    // ================================
-    // بناء المحادثة
-    // ================================
-    const input = [
-      {
-        role: "system",
-        content: SIRAJ_INSTRUCTIONS,
-      },
-      ...conversationHistory,
-      {
-        role: "user",
-        content: message.trim().slice(0, 4000),
-      },
-    ];
-
-    // ================================
-    // OpenAI
-    // ================================
-    const response = await openai.responses.create({
-      model: "gpt-5-mini",
-      input,
-    });
-
-    const reply =
-      response.output_text?.trim() ||
-      "عذراً، لم أتمكن من إعداد إجابة الآن.";
-
-    // ================================
-    // Response
-    // ================================
-    res.json({
-      success: true,
-      reply,
-    });
-  } catch (error) {
-    console.error("Siraj AI Error:", error);
-
-    res.status(500).json({
-      success: false,
-      error: "AI request failed",
-    });
   }
-});
+);
 
-// ================================
+// ========================================
 // Start Server
-// ================================
-const PORT = process.env.PORT || 10000;
+// ========================================
 
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Siraj backend running on port ${PORT}`);
-});
+const PORT =
+  process.env.PORT || 10000;
+
+app.listen(
+  PORT,
+  "0.0.0.0",
+  () => {
+    console.log(
+      `Siraj backend running on port ${PORT}`
+    );
+  }
+);
