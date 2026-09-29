@@ -58,7 +58,7 @@ class SirajUsage {
 class AiService {
   // عنوان الخادم على الشبكة المحلية
  static const String baseUrl =
-    'http://172.18.180.28:3000';
+    'https://siraj-backend-ersy.onrender.com';
   // إذا كان التطبيق يعمل على Windows / Web
   // على نفس اللابتوب:
   //
@@ -123,8 +123,7 @@ class AiService {
     // --------------------------------------------------------
 
     final uri =
-        Uri.parse('$baseUrl/api/chat');
-
+    Uri.parse('$baseUrl/api/ai/chat');
     // --------------------------------------------------------
     // تنظيف History
     // --------------------------------------------------------
