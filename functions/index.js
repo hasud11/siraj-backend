@@ -1,4 +1,3 @@
-
 const express = require("express");
 const cors = require("cors");
 const OpenAI = require("openai");
@@ -74,6 +73,12 @@ if (!process.env.OPENAI_API_KEY) {
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
+
+// ========================================
+// Siraj Settings
+// ========================================
+
+const FREE_QUESTIONS_LIMIT = 3;
 
 // ========================================
 // Siraj AI Instructions
@@ -239,6 +244,91 @@ async function verifyFirebaseToken(
 }
 
 // ========================================
+// Reserve Free Question
+// ========================================
+
+async function reserveQuestion(uid) {
+  if (!firestore) {
+    throw new Error(
+      "FIRESTORE_NOT_CONFIGURED"
+    );
+  }
+
+  const userRef =
+    firestore.collection("users").doc(uid);
+
+  return await firestore.runTransaction(
+    async (transaction) => {
+      const userSnapshot =
+        await transaction.get(userRef);
+
+      if (!userSnapshot.exists) {
+        throw new Error(
+          "USER_PROFILE_NOT_FOUND"
+        );
+      }
+
+      const userData =
+        userSnapshot.data() || {};
+
+      const accountType =
+        userData.accountType || "free";
+
+      // Premium users have no free-question limit.
+      if (
+        accountType === "premium"
+      ) {
+        return {
+          allowed: true,
+          premium: true,
+          questionsUsed: 0,
+          questionsRemaining: null,
+        };
+      }
+
+      const questionsUsed =
+        Number(
+          userData.freeQuestionsUsed || 0
+        );
+
+      if (
+        questionsUsed >=
+        FREE_QUESTIONS_LIMIT
+      ) {
+        return {
+          allowed: false,
+          premium: false,
+          questionsUsed:
+            questionsUsed,
+          questionsRemaining: 0,
+        };
+      }
+
+      const newQuestionsUsed =
+        questionsUsed + 1;
+
+      transaction.update(
+        userRef,
+        {
+          freeQuestionsUsed:
+            newQuestionsUsed,
+        }
+      );
+
+      return {
+        allowed: true,
+        premium: false,
+        questionsUsed:
+          newQuestionsUsed,
+        questionsRemaining:
+          FREE_QUESTIONS_LIMIT -
+          newQuestionsUsed,
+      };
+    }
+  );
+}
+
+// ========================================
 // Health Check
 // ========================================
 
@@ -269,6 +359,86 @@ app.get("/", (req, res) => {
       "Siraj AI backend is ready",
   });
 });
+
+// ========================================
+// Usage API
+// ========================================
+
+app.get(
+  "/api/usage",
+  verifyFirebaseToken,
+  async (req, res) => {
+    try {
+      const uid = req.user.uid;
+
+      const userRef =
+        firestore
+          .collection("users")
+          .doc(uid);
+
+      const userSnapshot =
+        await userRef.get();
+
+      if (!userSnapshot.exists) {
+        return res.status(404).json({
+          success: false,
+          error:
+            "USER_PROFILE_NOT_FOUND",
+        });
+      }
+
+      const userData =
+        userSnapshot.data() || {};
+
+      const accountType =
+        userData.accountType ||
+        "free";
+
+      const questionsUsed =
+        Number(
+          userData.freeQuestionsUsed ||
+            0
+        );
+
+      if (
+        accountType === "premium"
+      ) {
+        return res.json({
+          success: true,
+          accountType: "premium",
+          questionsUsed: 0,
+          questionsLimit: null,
+          questionsRemaining: null,
+        });
+      }
+
+      return res.json({
+        success: true,
+        accountType: "free",
+        questionsUsed:
+          questionsUsed,
+        questionsLimit:
+          FREE_QUESTIONS_LIMIT,
+        questionsRemaining: Math.max(
+          FREE_QUESTIONS_LIMIT -
+            questionsUsed,
+          0
+        ),
+      });
+    } catch (error) {
+      console.error(
+        "Usage Error:",
+        error
+      );
+
+      return res.status(500).json({
+        success: false,
+        error:
+          "USAGE_REQUEST_FAILED",
+      });
+    }
+  }
+);
 
 // ========================================
 // Siraj AI Chat API
@@ -307,6 +477,32 @@ app.post(
           success: false,
           error:
             "message is required",
+        });
+      }
+
+      // ----------------------------------------
+      // Reserve question
+      // ----------------------------------------
+
+      const usage =
+        await reserveQuestion(
+          req.user.uid
+        );
+
+      if (!usage.allowed) {
+        return res.status(402).json({
+          success: false,
+          error:
+            "FREE_LIMIT_REACHED",
+          usage: {
+            accountType:
+              "free",
+            questionsUsed:
+              usage.questionsUsed,
+            questionsLimit:
+              FREE_QUESTIONS_LIMIT,
+            questionsRemaining: 0,
+          },
         });
       }
 
@@ -393,12 +589,52 @@ app.post(
       return res.json({
         success: true,
         reply: reply,
+        usage: {
+          accountType:
+            usage.premium
+              ? "premium"
+              : "free",
+          questionsUsed:
+            usage.questionsUsed,
+          questionsLimit:
+            usage.premium
+              ? null
+              : FREE_QUESTIONS_LIMIT,
+          questionsRemaining:
+            usage.questionsRemaining,
+        },
       });
     } catch (error) {
       console.error(
         "Siraj AI Error:",
         error
       );
+
+      // ----------------------------------------
+      // Known Firestore errors
+      // ----------------------------------------
+
+      if (
+        error.message ===
+        "FIRESTORE_NOT_CONFIGURED"
+      ) {
+        return res.status(500).json({
+          success: false,
+          error:
+            "FIRESTORE_NOT_CONFIGURED",
+        });
+      }
+
+      if (
+        error.message ===
+        "USER_PROFILE_NOT_FOUND"
+      ) {
+        return res.status(404).json({
+          success: false,
+          error:
+            "USER_PROFILE_NOT_FOUND",
+        });
+      }
 
       return res.status(500).json({
         success: false,
