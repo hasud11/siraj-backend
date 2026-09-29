@@ -1,7 +1,8 @@
 const express = require("express");
 const cors = require("cors");
 const OpenAI = require("openai");
-const admin = require("firebase-admin");
+const { initializeApp, cert } = require("firebase-admin/app");
+const { getAuth } = require("firebase-admin/auth");
 require("dotenv").config();
 
 const app = express();
@@ -14,6 +15,7 @@ app.use(express.json());
 // ========================================
 
 let firebaseReady = false;
+let firebaseAuth = null;
 
 try {
   if (!process.env.FIREBASE_SERVICE_ACCOUNT) {
@@ -24,9 +26,11 @@ try {
     process.env.FIREBASE_SERVICE_ACCOUNT
   );
 
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
+  const firebaseApp = initializeApp({
+    credential: cert(serviceAccount),
   });
+
+  firebaseAuth = getAuth(firebaseApp);
 
   firebaseReady = true;
 
@@ -158,7 +162,7 @@ const SIRAJ_INSTRUCTIONS = `
 
 async function verifyFirebaseToken(req, res, next) {
   try {
-    if (!firebaseReady) {
+    if (!firebaseReady || !firebaseAuth) {
       return res.status(500).json({
         success: false,
         error: "FIREBASE_NOT_CONFIGURED",
@@ -174,11 +178,17 @@ async function verifyFirebaseToken(req, res, next) {
       });
     }
 
-    const idToken = authHeader.substring(7);
+    const idToken = authHeader.substring(7).trim();
 
-    const decodedToken = await admin
-      .auth()
-      .verifyIdToken(idToken);
+    if (!idToken) {
+      return res.status(401).json({
+        success: false,
+        error: "AUTH_REQUIRED",
+      });
+    }
+
+    const decodedToken =
+      await firebaseAuth.verifyIdToken(idToken);
 
     req.user = decodedToken;
 
@@ -248,6 +258,16 @@ app.post(
         });
       }
 
+      const cleanMessage =
+        message.trim();
+
+      if (!cleanMessage) {
+        return res.status(400).json({
+          success: false,
+          error: "message is required",
+        });
+      }
+
       // ----------------------------------------
       // Clean conversation history
       // ----------------------------------------
@@ -271,7 +291,9 @@ app.post(
           .slice(-12)
           .map((item) => ({
             role: item.role,
-            content: item.content.slice(0, 4000),
+            content: item.content
+              .trim()
+              .slice(0, 4000),
           }));
       }
 
@@ -287,7 +309,7 @@ app.post(
         ...conversationHistory,
         {
           role: "user",
-          content: message.trim().slice(0, 4000),
+          content: cleanMessage.slice(0, 4000),
         },
       ];
 
@@ -298,7 +320,7 @@ app.post(
       const response =
         await openai.responses.create({
           model: "gpt-5-mini",
-          input,
+          input: input,
         });
 
       const reply =
@@ -311,7 +333,7 @@ app.post(
 
       return res.json({
         success: true,
-        reply,
+        reply: reply,
       });
     } catch (error) {
       console.error(
