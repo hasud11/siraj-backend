@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/constants/app_colors.dart';
@@ -29,9 +27,6 @@ class _ChatScreenState extends State<ChatScreen> {
   // ============================================================
 
   final AiService _aiService = AiService();
-
-  final FirebaseFirestore _db =
-      FirebaseFirestore.instance;
 
   // ============================================================
   // Controllers
@@ -67,14 +62,6 @@ class _ChatScreenState extends State<ChatScreen> {
 
   bool _isTyping = false;
 
-  // عدد الأسئلة المستخدمة في هذه الجلسة
-  int _questionsUsed = 0;
-
-  // حالة الحساب
-  bool _isPremium = false;
-
-  bool _isLoadingAccount = true;
-
   // ============================================================
   // تشغيل الصفحة
   // ============================================================
@@ -87,84 +74,53 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   // ============================================================
-  // تحميل بيانات الحساب
+  // تحميل بيانات الحساب من AiService
+  //
+  // مهم:
+  // Flutter لا يكتب العداد في Firestore.
+  // Backend هو المسؤول عن العداد.
   // ============================================================
 
   Future<void> _loadAccountData() async {
-    final user = FirebaseAuth.instance.currentUser;
+    try {
+      await _aiService.refreshUsage();
+    } catch (_) {
+      // إذا تعذر تحديث الاستخدام، لا نوقف الصفحة.
+      // Backend سيبقى صاحب القرار النهائي عند إرسال السؤال.
+    }
 
-    if (user == null) {
-      if (mounted) {
-        setState(() {
-          _isLoadingAccount = false;
-        });
-      }
+    if (!mounted) {
       return;
     }
 
-    try {
-      final doc =
-          await _db.collection('users').doc(user.uid).get();
+    setState(() {});
 
-      if (!mounted) {
-        return;
-      }
-
-      final data = doc.data();
-
-      final accountType =
-          data?['accountType']?.toString() ?? 'free';
-
-      final questionsUsed =
-          (data?['freeQuestionsUsed'] as num?)?.toInt() ?? 0;
-
-      setState(() {
-        _isPremium = accountType == 'premium';
-        _questionsUsed = questionsUsed;
-        _isLoadingAccount = false;
+    // إذا تم فتح سراج من الأذكار بسؤال محدد
+    if (widget.initialMessage != null &&
+        widget.initialMessage!.trim().isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _sendInitialMessage(
+          widget.initialMessage!.trim(),
+        );
       });
-
-      // إذا تم فتح سراج من الأذكار بسؤال محدد
-      if (widget.initialMessage != null &&
-          widget.initialMessage!.trim().isNotEmpty) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _sendInitialMessage(
-            widget.initialMessage!.trim(),
-          );
-        });
-      }
-    } catch (e) {
-      if (!mounted) {
-        return;
-      }
-
-      setState(() {
-        _isLoadingAccount = false;
-      });
-
-      // حتى لا تتوقف الصفحة في حال وجود مشكلة مؤقتة
-      if (widget.initialMessage != null &&
-          widget.initialMessage!.trim().isNotEmpty) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _sendInitialMessage(
-            widget.initialMessage!.trim(),
-          );
-        });
-      }
     }
   }
 
   // ============================================================
-  // هل يستطيع المستخدم إرسال سؤال؟
+  // هل الحساب Premium؟
   // ============================================================
 
-  bool get _canAsk {
-    if (_isPremium) {
-      return true;
-    }
-
-    return _questionsUsed < freeQuestionLimit;
+  bool get _isPremium {
+    return _aiService.isPremium;
   }
+
+  // ============================================================
+  // عدد الأسئلة المستخدمة
+  //
+  // القيمة تأتي من Backend عبر AiService.
+  // ============================================================
+
+  
 
   // ============================================================
   // الأسئلة المتبقية
@@ -176,79 +132,28 @@ class _ChatScreenState extends State<ChatScreen> {
     }
 
     final remaining =
-        freeQuestionLimit - _questionsUsed;
+        _aiService.remainingQuestions;
 
-    return remaining < 0 ? 0 : remaining;
+    if (remaining < 0) {
+      return 0;
+    }
+
+    return remaining;
   }
 
   // ============================================================
-  // حجز سؤال للمستخدم
+  // هل يستطيع المستخدم إرسال سؤال؟
   //
-  // نستخدم Transaction حتى لا يستطيع المستخدم إرسال عدة
-  // طلبات متزامنة وتجاوز العدد بسهولة.
+  // هذه ليست الحماية الأمنية النهائية.
+  // Backend هو الذي يقرر فعليًا.
   // ============================================================
 
-  Future<bool> _reserveQuestion() async {
-    final user = FirebaseAuth.instance.currentUser;
-
-    if (user == null) {
-      return false;
+  bool get _canAsk {
+    if (_isPremium) {
+      return true;
     }
 
-    try {
-      final userRef =
-          _db.collection('users').doc(user.uid);
-
-      final allowed =
-          await _db.runTransaction<bool>(
-        (transaction) async {
-          final snapshot =
-              await transaction.get(userRef);
-
-          final data = snapshot.data();
-
-          final accountType =
-              data?['accountType']?.toString() ?? 'free';
-
-          // الحساب المدفوع ليس لديه حد
-          if (accountType == 'premium') {
-            return true;
-          }
-
-          final currentUsed =
-              (data?['freeQuestionsUsed'] as num?)
-                      ?.toInt() ??
-                  0;
-
-          if (currentUsed >= freeQuestionLimit) {
-            return false;
-          }
-
-          transaction.set(
-            userRef,
-            {
-              'freeQuestionsUsed':
-                  currentUsed + 1,
-            },
-            SetOptions(merge: true),
-          );
-
-          return true;
-        },
-      );
-
-      if (allowed) {
-        if (mounted && !_isPremium) {
-          setState(() {
-            _questionsUsed++;
-          });
-        }
-      }
-
-      return allowed;
-    } catch (e) {
-      return false;
-    }
+    return !_aiService.hasReachedFreeLimit;
   }
 
   // ============================================================
@@ -277,7 +182,6 @@ class _ChatScreenState extends State<ChatScreen> {
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // أيقونة
                 Container(
                   width: 68,
                   height: 68,
@@ -333,7 +237,6 @@ class _ChatScreenState extends State<ChatScreen> {
 
                 const SizedBox(height: 20),
 
-                // زر الاشتراك
                 SizedBox(
                   width: double.infinity,
                   height: 50,
@@ -413,6 +316,22 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   // ============================================================
+  // التعامل مع انتهاء الأسئلة
+  // ============================================================
+
+  void _handleFreeLimitReached() {
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {});
+
+    FocusScope.of(context).unfocus();
+
+    _showSubscriptionDialog();
+  }
+
+  // ============================================================
   // إرسال السؤال الأول القادم من الأذكار
   // ============================================================
 
@@ -421,24 +340,10 @@ class _ChatScreenState extends State<ChatScreen> {
       return;
     }
 
-    if (_isLoadingAccount) {
-      return;
-    }
-
-    // فحص الحد
+    // فحص محلي سريع فقط.
+    // Backend يبقى صاحب القرار النهائي.
     if (!_canAsk) {
       _showSubscriptionDialog();
-      return;
-    }
-
-    // حجز السؤال
-    final allowed =
-        await _reserveQuestion();
-
-    if (!allowed) {
-      if (mounted) {
-        _showSubscriptionDialog();
-      }
       return;
     }
 
@@ -487,6 +392,33 @@ class _ChatScreenState extends State<ChatScreen> {
       });
 
       _scrollToBottom();
+
+      // تحديث الواجهة بعد أن قام Backend بتحديث العداد.
+      setState(() {});
+
+      if (!_isPremium &&
+          _aiService.hasReachedFreeLimit) {
+        Future.delayed(
+          const Duration(milliseconds: 700),
+          () {
+            if (!mounted) {
+              return;
+            }
+
+            _showSubscriptionDialog();
+          },
+        );
+      }
+    } on SirajFreeLimitException {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _isTyping = false;
+      });
+
+      _handleFreeLimitReached();
     } catch (e) {
       if (!mounted) {
         return;
@@ -521,32 +453,10 @@ class _ChatScreenState extends State<ChatScreen> {
       return;
     }
 
-    if (_isLoadingAccount) {
-      return;
-    }
-
-    // ==========================================================
-    // فحص الاشتراك والحد المجاني
-    // ==========================================================
-
+    // فحص محلي سريع فقط.
     if (!_canAsk) {
       FocusScope.of(context).unfocus();
       _showSubscriptionDialog();
-      return;
-    }
-
-    // ==========================================================
-    // حجز السؤال
-    // ==========================================================
-
-    final allowed =
-        await _reserveQuestion();
-
-    if (!allowed) {
-      if (mounted) {
-        FocusScope.of(context).unfocus();
-        _showSubscriptionDialog();
-      }
       return;
     }
 
@@ -607,11 +517,17 @@ class _ChatScreenState extends State<ChatScreen> {
       _scrollToBottom();
 
       // ========================================================
+      // تحديث العداد من البيانات التي أعادها Backend
+      // ========================================================
+
+      setState(() {});
+
+      // ========================================================
       // بعد السؤال الثالث
       // ========================================================
 
       if (!_isPremium &&
-          _questionsUsed >= freeQuestionLimit) {
+          _aiService.hasReachedFreeLimit) {
         Future.delayed(
           const Duration(milliseconds: 700),
           () {
@@ -623,6 +539,16 @@ class _ChatScreenState extends State<ChatScreen> {
           },
         );
       }
+    } on SirajFreeLimitException {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _isTyping = false;
+      });
+
+      _handleFreeLimitReached();
     } catch (e) {
       if (!mounted) {
         return;
@@ -778,8 +704,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
                   const Spacer(),
 
-                  if (!_isPremium &&
-                      !_isLoadingAccount)
+                  if (!_isPremium)
                     Text(
                       'متبقي $_remainingQuestions من $freeQuestionLimit',
                       style: const TextStyle(
@@ -852,8 +777,7 @@ class _ChatScreenState extends State<ChatScreen> {
             _MessageInput(
               controller: _messageController,
               isTyping: _isTyping,
-              enabled: _canAsk &&
-                  !_isLoadingAccount,
+              enabled: _canAsk,
               onSend: _sendMessage,
             ),
           ],

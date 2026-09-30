@@ -36,7 +36,9 @@ class SirajUsage {
   });
 
   bool get isFree =>
-      accountType.toLowerCase() == 'free' && !paid && !unlimited;
+      accountType.toLowerCase() == 'free' &&
+      !paid &&
+      !unlimited;
 
   bool get isPremium =>
       paid ||
@@ -56,14 +58,8 @@ class SirajUsage {
 // ============================================================
 
 class AiService {
-  // عنوان الخادم على الشبكة المحلية
- static const String baseUrl =
-    'https://siraj-backend-ersy.onrender.com';
-  // إذا كان التطبيق يعمل على Windows / Web
-  // على نفس اللابتوب:
-  //
-  // static const String baseUrl =
-  //     'http://localhost:3000';
+  static const String baseUrl =
+      'https://siraj-backend-ersy.onrender.com';
 
   static const Duration requestTimeout =
       Duration(seconds: 90);
@@ -92,10 +88,6 @@ class AiService {
       );
     }
 
-    // --------------------------------------------------------
-    // المستخدم الحالي
-    // --------------------------------------------------------
-
     final user = _auth.currentUser;
 
     if (user == null) {
@@ -104,10 +96,7 @@ class AiService {
       );
     }
 
-    // --------------------------------------------------------
-    // الحصول على Firebase ID Token
-    // --------------------------------------------------------
-
+    // Firebase ID Token
     final idToken =
         await user.getIdToken();
 
@@ -118,22 +107,17 @@ class AiService {
       );
     }
 
-    // --------------------------------------------------------
-    // عنوان الطلب
-    // --------------------------------------------------------
+    // ========================================================
+    // مهم:
+    // هذا هو المسار الموجود فعليًا في index.js
+    // ========================================================
 
-    final uri =
-    Uri.parse('$baseUrl/api/ai/chat');
-    // --------------------------------------------------------
-    // تنظيف History
-    // --------------------------------------------------------
+    final uri = Uri.parse(
+      '$baseUrl/api/ai/chat',
+    );
 
     final cleanHistory =
         _cleanHistory(history);
-
-    // --------------------------------------------------------
-    // إرسال الطلب
-    // --------------------------------------------------------
 
     try {
       final response = await http
@@ -142,28 +126,17 @@ class AiService {
             headers: {
               'Content-Type':
                   'application/json',
-
               'Accept':
                   'application/json',
-
               'Authorization':
                   'Bearer $idToken',
             },
             body: jsonEncode({
-              'message':
-                  cleanPrompt,
-
-              'history':
-                  cleanHistory,
+              'message': cleanPrompt,
+              'history': cleanHistory,
             }),
           )
-          .timeout(
-            requestTimeout,
-          );
-
-      // ------------------------------------------------------
-      // قراءة JSON
-      // ------------------------------------------------------
+          .timeout(requestTimeout);
 
       final data =
           _decodeResponse(response);
@@ -186,77 +159,91 @@ class AiService {
           );
         }
 
-        _updateUsageFromChatResponse(
-          data,
-        );
+        // Backend يضع معلومات الاستخدام داخل usage
+        _updateUsageFromChatResponse(data);
 
         return reply;
       }
 
       // ======================================================
-      // انتهاء الأسئلة المجانية
+      // الحد المجاني
       //
-      // server.js يعيد 402
+      // index.js يعيد HTTP 402
+      // والبيانات داخل usage
       // ======================================================
 
       if (response.statusCode == 402 &&
-          data['code'] ==
+          data['error'] ==
               'FREE_LIMIT_REACHED') {
+        final usageData =
+            data['usage'] is Map
+                ? Map<String, dynamic>.from(
+                    data['usage'] as Map,
+                  )
+                : <String, dynamic>{};
+
         final used =
             _toInt(
-          data['used'],
+          usageData['questionsUsed'],
         );
 
         final free =
             _toInt(
-          data['limit'],
+          usageData['questionsLimit'],
           fallback: 3,
         );
 
-        lastUsage =
-            SirajUsage(
-          accountType:
-              data['accountType']
-                      ?.toString() ??
-                  'free',
+        final remaining =
+            _toInt(
+          usageData['questionsRemaining'],
+        );
 
-          usedQuestions:
-              used,
+        final accountType =
+            usageData['accountType']
+                    ?.toString() ??
+                'free';
 
-          freeQuestions:
-              free,
-
-          remainingQuestions:
-              0,
-
-          paid:
-              false,
-
-          unlimited:
-              false,
+        lastUsage = SirajUsage(
+          accountType: accountType,
+          usedQuestions: used,
+          freeQuestions: free,
+          remainingQuestions: remaining,
         );
 
         throw SirajFreeLimitException(
           message:
-              data['message']
-                      ?.toString() ??
-                  'انتهت الأسئلة المجانية لسِراج.',
-
-          usedQuestions:
-              used,
-
-          freeQuestions:
-              free,
+              'انتهت الأسئلة المجانية لسِراج.',
+          usedQuestions: used,
+          freeQuestions: free,
         );
       }
 
       // ======================================================
-      // انتهاء الجلسة
+      // Firebase Authentication
       // ======================================================
 
       if (response.statusCode == 401) {
+        final error =
+            data['error']
+                ?.toString();
+
+        if (error ==
+            'AUTH_REQUIRED') {
+          throw Exception(
+            'لم يتم إرسال جلسة تسجيل الدخول إلى خادم سِراج.',
+          );
+        }
+
+        if (error ==
+            'INVALID_AUTH_TOKEN') {
+          throw Exception(
+            'جلسة تسجيل الدخول غير صالحة. '
+            'سجلي الخروج ثم الدخول مرة أخرى.',
+          );
+        }
+
         throw Exception(
-          'انتهت جلسة تسجيل الدخول. سجلي الدخول مرة أخرى.',
+          'تعذر التحقق من تسجيل الدخول.',
         );
       }
 
@@ -264,7 +251,7 @@ class AiService {
       // Firebase غير مهيأ
       // ======================================================
 
-      if (data['code'] ==
+      if (data['error'] ==
           'FIREBASE_NOT_CONFIGURED') {
         throw Exception(
           'خدمة الحسابات غير مهيأة على الخادم.',
@@ -275,7 +262,7 @@ class AiService {
       // Firestore غير مهيأ
       // ======================================================
 
-      if (data['code'] ==
+      if (data['error'] ==
           'FIRESTORE_NOT_CONFIGURED') {
         throw Exception(
           'قاعدة بيانات سِراج غير مهيأة على الخادم.',
@@ -283,13 +270,14 @@ class AiService {
       }
 
       // ======================================================
-      // الذكاء الاصطناعي غير مهيأ
+      // المستخدم ليس لديه Profile
       // ======================================================
 
-      if (data['code'] ==
-          'AI_NOT_CONFIGURED') {
+      if (response.statusCode == 404 &&
+          data['error'] ==
+              'USER_PROFILE_NOT_FOUND') {
         throw Exception(
-          'خدمة سِراج الذكية غير مفعلة حاليًا.',
+          'لم يتم العثور على ملف حسابك في قاعدة بيانات سِراج.',
         );
       }
 
@@ -305,7 +293,7 @@ class AiService {
       }
 
       // ======================================================
-      // خطأ خادم
+      // خطأ الخادم
       // ======================================================
 
       if (response.statusCode >= 500) {
@@ -314,10 +302,6 @@ class AiService {
           'حاولي مرة أخرى.',
         );
       }
-
-      // ======================================================
-      // خطأ عام
-      // ======================================================
 
       final message =
           data['message']
@@ -329,51 +313,19 @@ class AiService {
       throw Exception(
         '$message (HTTP ${response.statusCode})',
       );
-    }
-
-    // --------------------------------------------------------
-    // انتهاء الأسئلة المجانية
-    // --------------------------------------------------------
-
-    on SirajFreeLimitException {
+    } on SirajFreeLimitException {
       rethrow;
-    }
-
-    // --------------------------------------------------------
-    // خطأ اتصال HTTP
-    // --------------------------------------------------------
-
-    on http.ClientException catch (e) {
+    } on http.ClientException catch (e) {
       throw Exception(
-        'تعذر الاتصال بخادم سِراج.\n'
-        'تأكدي من تشغيل الخادم ثم حاولي مرة أخرى.\n\n'
-        '$e',
+        'تعذر الاتصال بخادم سِراج.\n$e',
       );
-    }
-
-    // --------------------------------------------------------
-    // JSON غير صالح
-    // --------------------------------------------------------
-
-    on FormatException {
+    } on FormatException {
       throw Exception(
         'وصل رد غير مفهوم من خادم سِراج.',
       );
-    }
-
-    // --------------------------------------------------------
-    // أخطاء عادية
-    // --------------------------------------------------------
-
-    on Exception {
+    } on Exception {
       rethrow;
-    }
-
-    // --------------------------------------------------------
-    // أي خطأ آخر
-    // --------------------------------------------------------
-
-    catch (e) {
+    } catch (e) {
       throw Exception(
         'تعذر الاتصال بسِراج: $e',
       );
@@ -381,7 +333,10 @@ class AiService {
   }
 
   // ==========================================================
-  // تحديث معلومات الاستخدام
+  // معلومات الاستخدام
+  //
+  // المسار الموجود فعليًا في index.js:
+  // /api/usage
   // ==========================================================
 
   Future<SirajUsage> refreshUsage() async {
@@ -404,8 +359,9 @@ class AiService {
       );
     }
 
-    final uri =
-        Uri.parse('$baseUrl/api/usage');
+    final uri = Uri.parse(
+      '$baseUrl/api/usage',
+    );
 
     try {
       final response =
@@ -415,40 +371,24 @@ class AiService {
                 headers: {
                   'Accept':
                       'application/json',
-
                   'Authorization':
                       'Bearer $idToken',
                 },
               )
-              .timeout(
-                usageTimeout,
-              );
+              .timeout(usageTimeout);
 
       final data =
-          _decodeResponse(
-        response,
-      );
-
-      // ------------------------------------------------------
-      // نجاح
-      // ------------------------------------------------------
+          _decodeResponse(response);
 
       if (response.statusCode >= 200 &&
           response.statusCode < 300) {
         final usage =
-            _usageFromServer(
-          data,
-        );
+            _usageFromServer(data);
 
-        lastUsage =
-            usage;
+        lastUsage = usage;
 
         return usage;
       }
-
-      // ------------------------------------------------------
-      // جلسة غير صالحة
-      // ------------------------------------------------------
 
       if (response.statusCode == 401) {
         throw Exception(
@@ -460,20 +400,18 @@ class AiService {
       final message =
           data['message']
                   ?.toString() ??
+              data['error']
+                  ?.toString() ??
               'تعذر الحصول على معلومات استخدام سِراج.';
 
       throw Exception(
         '$message (HTTP ${response.statusCode})',
       );
-    }
-
-    on http.ClientException catch (e) {
+    } on http.ClientException catch (e) {
       throw Exception(
         'تعذر الاتصال بخادم سِراج.\n$e',
       );
-    }
-
-    on FormatException {
+    } on FormatException {
       throw Exception(
         'وصل رد غير صالح من خادم سِراج.',
       );
@@ -481,7 +419,14 @@ class AiService {
   }
 
   // ==========================================================
-  // تحويل رد /api/usage إلى SirajUsage
+  // تحويل /api/usage
+  //
+  // Backend يعيد:
+  //
+  // accountType
+  // questionsUsed
+  // questionsLimit
+  // questionsRemaining
   // ==========================================================
 
   SirajUsage _usageFromServer(
@@ -492,129 +437,109 @@ class AiService {
                 ?.toString() ??
             'free';
 
-    final paid =
-        data['paid'] == true;
-
-    final unlimited =
-        data['unlimited'] == true;
-
     final used =
         _toInt(
-      data['used'],
+      data['questionsUsed'],
     );
 
     final limit =
         _toInt(
-      data['limit'],
+      data['questionsLimit'],
       fallback: 3,
     );
 
     final remaining =
-        data['remaining'] == null
-            ? (
-                unlimited
-                    ? 0
-                    : _calculateRemaining(
-                        limit,
-                        used,
-                      )
-              )
-            : _toInt(
-                data['remaining'],
-              );
+        _toInt(
+      data['questionsRemaining'],
+      fallback:
+          _calculateRemaining(
+        limit,
+        used,
+      ),
+    );
+
+    final unlimited =
+        accountType.toLowerCase() ==
+            'premium' ||
+        accountType.toLowerCase() ==
+            'pro' ||
+        accountType.toLowerCase() ==
+            'paid' ||
+        accountType.toLowerCase() ==
+            'subscription' ||
+        accountType.toLowerCase() ==
+            'subscriber';
 
     return SirajUsage(
-      accountType:
-          accountType,
-
-      usedQuestions:
-          used,
-
+      accountType: accountType,
+      usedQuestions: used,
       freeQuestions:
-          unlimited
-              ? 0
-              : limit,
-
+          unlimited ? 0 : limit,
       remainingQuestions:
-          unlimited
-              ? 0
-              : remaining,
-
-      paid:
-          paid,
-
-      unlimited:
-          unlimited,
+          unlimited ? 0 : remaining,
+      paid: unlimited,
+      unlimited: unlimited,
     );
   }
 
   // ==========================================================
-  // تحديث الاستخدام من /api/chat
+  // تحديث الاستخدام بعد نجاح المحادثة
+  //
+  // Backend يعيد usage داخل response
   // ==========================================================
 
   void _updateUsageFromChatResponse(
     Map<String, dynamic> data,
   ) {
+    final usageData =
+        data['usage'] is Map
+            ? Map<String, dynamic>.from(
+                data['usage'] as Map,
+              )
+            : <String, dynamic>{};
+
     final accountType =
-        data['accountType']
+        usageData['accountType']
                 ?.toString() ??
             'free';
 
-    final paid =
-        data['paid'] == true;
+    final unlimited =
+        accountType.toLowerCase() ==
+            'premium' ||
+        accountType.toLowerCase() ==
+            'pro' ||
+        accountType.toLowerCase() ==
+            'paid' ||
+        accountType.toLowerCase() ==
+            'subscription' ||
+        accountType.toLowerCase() ==
+            'subscriber';
+
+    final used =
+        _toInt(
+      usageData['questionsUsed'],
+    );
 
     final freeLimit =
         _toInt(
-      data['freeLimit'],
+      usageData['questionsLimit'],
       fallback: 3,
     );
 
-    final usedValue =
-        data['questionsUsed'];
-
-    final remainingValue =
-        data['questionsRemaining'];
-
-    final unlimited =
-        paid &&
-        usedValue == null &&
-        remainingValue == null;
-
-    final used =
-        unlimited
-            ? 0
-            : _toInt(
-                usedValue,
-              );
-
     final remaining =
-        unlimited
-            ? 0
-            : _toInt(
-                remainingValue,
-              );
+        _toInt(
+      usageData['questionsRemaining'],
+    );
 
-    lastUsage =
-        SirajUsage(
-      accountType:
-          accountType,
-
-      usedQuestions:
-          used,
-
+    lastUsage = SirajUsage(
+      accountType: accountType,
+      usedQuestions: used,
       freeQuestions:
-          paid
-              ? 0
-              : freeLimit,
-
+          unlimited ? 0 : freeLimit,
       remainingQuestions:
-          remaining,
-
-      paid:
-          paid,
-
-      unlimited:
-          unlimited,
+          unlimited ? 0 : remaining,
+      paid: unlimited,
+      unlimited: unlimited,
     );
   }
 
@@ -626,47 +551,40 @@ class AiService {
     List<Map<String, String>> history,
   ) {
     return history
-        .where(
-          (item) {
-            final role =
-                item['role'];
+        .where((item) {
+          final role =
+              item['role'];
 
-            final content =
-                item['content'];
+          final content =
+              item['content'];
 
-            if (role == null ||
-                content == null) {
-              return false;
-            }
+          if (role == null ||
+              content == null) {
+            return false;
+          }
 
-            if (role != 'user' &&
-                role != 'assistant') {
-              return false;
-            }
+          if (role != 'user' &&
+              role != 'assistant') {
+            return false;
+          }
 
-            return content
-                .trim()
-                .isNotEmpty;
-          },
-        )
-        .map(
-          (item) {
-            return {
-              'role':
-                  item['role']!
-                      .trim(),
-
-              'content':
-                  item['content']!
-                      .trim(),
-            };
-          },
-        )
+          return content
+              .trim()
+              .isNotEmpty;
+        })
+        .map((item) {
+          return {
+            'role':
+                item['role']!.trim(),
+            'content':
+                item['content']!.trim(),
+          };
+        })
         .toList();
   }
 
   // ==========================================================
-  // قراءة JSON من الخادم
+  // قراءة JSON
   // ==========================================================
 
   Map<String, dynamic> _decodeResponse(
@@ -681,9 +599,7 @@ class AiService {
     }
 
     final decoded =
-        jsonDecode(
-      response.body,
-    );
+        jsonDecode(response.body);
 
     if (decoded is! Map) {
       throw const FormatException(
@@ -707,11 +623,9 @@ class AiService {
     final remaining =
         limit - used;
 
-    if (remaining < 0) {
-      return 0;
-    }
-
-    return remaining;
+    return remaining < 0
+        ? 0
+        : remaining;
   }
 
   // ==========================================================
@@ -735,9 +649,7 @@ class AiService {
     }
 
     if (value is String) {
-      return int.tryParse(
-            value,
-          ) ??
+      return int.tryParse(value) ??
           fallback;
     }
 
@@ -759,7 +671,7 @@ class AiService {
       _auth.currentUser != null;
 
   // ==========================================================
-  // عدد الأسئلة المتبقية
+  // الأسئلة المتبقية
   // ==========================================================
 
   int get remainingQuestions =>
@@ -767,7 +679,7 @@ class AiService {
       3;
 
   // ==========================================================
-  // هل انتهت الأسئلة المجانية؟
+  // هل انتهت الأسئلة؟
   // ==========================================================
 
   bool get hasReachedFreeLimit =>
@@ -783,7 +695,7 @@ class AiService {
       'free';
 
   // ==========================================================
-  // هل الحساب مدفوع؟
+  // هل Premium؟
   // ==========================================================
 
   bool get isPremium =>
@@ -791,7 +703,7 @@ class AiService {
       false;
 
   // ==========================================================
-  // عدد الأسئلة المستخدمة
+  // الأسئلة المستخدمة
   // ==========================================================
 
   int get usedQuestions =>

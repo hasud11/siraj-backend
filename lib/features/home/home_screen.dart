@@ -1,5 +1,3 @@
-
-
 import 'package:flutter/material.dart';
 import '../profile/profile_screen.dart';
 import '../checker/checker_screen.dart';
@@ -53,6 +51,19 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // ============================================================
+  // فتح الفحص
+  // ============================================================
+
+  void _openChecker() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const CheckerScreen(),
+      ),
+    );
+  }
+
+  // ============================================================
   // الصفحة
   // ============================================================
 
@@ -60,14 +71,12 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: cream,
-
       body: SafeArea(
         child: Directionality(
           textDirection: TextDirection.rtl,
           child: _buildHome(),
         ),
       ),
-
       bottomNavigationBar: Directionality(
         textDirection: TextDirection.rtl,
         child: _buildBottomNavigation(),
@@ -83,10 +92,6 @@ class _HomeScreenState extends State<HomeScreen> {
     return CustomScrollView(
       physics: const BouncingScrollPhysics(),
       slivers: [
-        // --------------------------------------------------------
-        // الهيدر
-        // --------------------------------------------------------
-
         SliverToBoxAdapter(
           child: _buildPurpleHeader(),
         ),
@@ -124,7 +129,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
 
         // --------------------------------------------------------
-        // عنوان الاستكشاف
+        // عنوان الخدمات
         // --------------------------------------------------------
 
         SliverToBoxAdapter(
@@ -136,7 +141,7 @@ class _HomeScreenState extends State<HomeScreen> {
               0,
             ),
             child: _buildSectionTitle(
-              'استكشف سِراج',
+              'السحر والحسد والرقية',
             ),
           ),
         ),
@@ -157,8 +162,8 @@ class _HomeScreenState extends State<HomeScreen> {
               [
                 _buildFeatureCard(
                   icon: Icons.auto_awesome_rounded,
-                  title: 'التحدث مع سِراج',
-                  subtitle: 'مساعدك الذكي',
+                  title: 'اسأل سِراج',
+                  subtitle: 'عن السحر والحسد',
                   iconBackground: const Color(0xFFE8DFFF),
                   iconColor: const Color(0xFF6643A8),
                   onTap: _openChat,
@@ -166,8 +171,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 _buildFeatureCard(
                   icon: Icons.menu_book_rounded,
-                  title: 'الأذكار والرقية',
-                  subtitle: 'محتوى موثوق',
+                  title: 'الرقية والأذكار',
+                  subtitle: 'تحصين وذكر موثوق',
                   iconBackground: const Color(0xFFE4F0EA),
                   iconColor: const Color(0xFF42816D),
                   onTap: _openLibrary,
@@ -175,24 +180,17 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 _buildFeatureCard(
                   icon: Icons.shield_rounded,
-                  title: 'افحص شيئًا',
-                  subtitle: 'تحقق من عرض مشبوه',
+                  title: 'حلّل رسالة أو ادعاء',
+                  subtitle: 'انتبه للاستغلال والتخويف',
                   iconBackground: const Color(0xFFE9E7F6),
                   iconColor: const Color(0xFF6557A2),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const CheckerScreen(),
-                      ),
-                    );
-                  },
+                  onTap: _openChecker,
                 ),
 
                 _buildFeatureCard(
                   icon: Icons.person_rounded,
                   title: 'استشارة بشرية',
-                  subtitle: 'مع مختص موثوق',
+                  subtitle: 'مساعدة موثوقة عند الحاجة',
                   iconBackground: const Color(0xFFFFEBD8),
                   iconColor: const Color(0xFFA66D39),
                   onTap: () {
@@ -218,7 +216,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
 
         // --------------------------------------------------------
-        // البرنامج اليومي
+        // برنامج التحصين اليومي
         // --------------------------------------------------------
 
         SliverToBoxAdapter(
@@ -230,7 +228,7 @@ class _HomeScreenState extends State<HomeScreen> {
               0,
             ),
             child: _buildSectionTitle(
-              'برنامجك اليومي',
+              'برنامج التحصين اليومي',
             ),
           ),
         ),
@@ -394,9 +392,8 @@ class _HomeScreenState extends State<HomeScreen> {
                               fontWeight: FontWeight.w800,
                             ),
                           ),
-
                           Text(
-                            'رفيقك الروحي',
+                            'رفيقك للتحصين والوعي الروحي',
                             style: TextStyle(
                               color: Colors.white
                                   .withValues(alpha: 0.70),
@@ -410,7 +407,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
                       _headerCircleButton(
                         Icons.person_outline_rounded,
-                        onTap: () {},
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  const ProfileScreen(),
+                            ),
+                          );
+                        },
                       ),
                     ],
                   ),
@@ -420,7 +425,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   const Align(
                     alignment: Alignment.centerRight,
                     child: Text(
-                      'مساحة هادئة للروح والمعرفة',
+                      'مساحة هادئة لفهم الخوف والتحصين',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 18,
@@ -434,7 +439,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Align(
                     alignment: Alignment.centerRight,
                     child: Text(
-                      'اكتشف، اسأل، وتعلّم مع سِراج',
+                      'اسأل، تعلّم، تحصّن، وتحقق بوعي',
                       style: TextStyle(
                         color: Colors.white
                             .withValues(alpha: 0.70),
@@ -487,7 +492,7 @@ class _HomeScreenState extends State<HomeScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'صباح الخير',
+          'أهلًا بكِ في سِراج',
           style: TextStyle(
             color: textDark,
             fontSize: 27,
@@ -498,10 +503,11 @@ class _HomeScreenState extends State<HomeScreen> {
         const SizedBox(height: 5),
 
         Text(
-          'كيف يمكنني أن أساعدك اليوم؟',
+          'إذا كان السحر أو الحسد أو العين يسبب لكِ القلق، ابدئي بهدوء.',
           style: TextStyle(
             color: textDark.withValues(alpha: 0.60),
             fontSize: 15,
+            height: 1.5,
           ),
         ),
       ],
@@ -523,7 +529,6 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(25),
-
           gradient: const LinearGradient(
             colors: [
               Color(0xFF6547A8),
@@ -532,7 +537,6 @@ class _HomeScreenState extends State<HomeScreen> {
             begin: Alignment.centerRight,
             end: Alignment.centerLeft,
           ),
-
           boxShadow: [
             BoxShadow(
               color: purple.withValues(alpha: 0.22),
@@ -541,7 +545,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
-
         child: Row(
           children: [
             Container(
@@ -577,7 +580,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   SizedBox(height: 4),
 
                   Text(
-                    'اسأل سِراج عن أي سؤال روحي',
+                    'اسأل عن السحر والحسد والعين والرقية',
                     style: TextStyle(
                       color: Colors.white70,
                       fontSize: 13,
@@ -637,7 +640,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // ============================================================
-  // بطاقات الاستكشاف
+  // بطاقات الخدمات
   // ============================================================
 
   Widget _buildFeatureCard({
@@ -657,13 +660,10 @@ class _HomeScreenState extends State<HomeScreen> {
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: Colors.white,
-
             borderRadius: BorderRadius.circular(22),
-
             border: Border.all(
               color: const Color(0xFFE9E2D9),
             ),
-
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.035),
@@ -672,7 +672,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ],
           ),
-
           child: Column(
             crossAxisAlignment:
                 CrossAxisAlignment.start,
@@ -728,87 +727,99 @@ class _HomeScreenState extends State<HomeScreen> {
   // ============================================================
 
   Widget _buildDailyProgram() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(17),
-
-      decoration: BoxDecoration(
-        color: Colors.white,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
         borderRadius: BorderRadius.circular(23),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const DhikrListScreen(
+                title: 'أذكار الصباح',
+              ),
+            ),
+          );
+        },
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(17),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(23),
+            border: Border.all(
+              color: const Color(0xFFE8E0D6),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.025),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF0CF),
+                  borderRadius:
+                      BorderRadius.circular(16),
+                ),
+                child: const Icon(
+                  Icons.shield_outlined,
+                  color: Color(0xFFD19A39),
+                  size: 27,
+                ),
+              ),
 
-        border: Border.all(
-          color: const Color(0xFFE8E0D6),
+              const SizedBox(width: 14),
+
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'تحصين الصباح',
+                      style: TextStyle(
+                        color: textDark,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+
+                    SizedBox(height: 4),
+
+                    Text(
+                      'ابدئي يومك بالأذكار والتحصين',
+                      style: TextStyle(
+                        color: Colors.black54,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              Container(
+                width: 38,
+                height: 38,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFF3EFE7),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  color: purpleDark,
+                  size: 15,
+                ),
+              ),
+            ],
+          ),
         ),
-
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.025),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-
-      child: Row(
-        children: [
-          Container(
-            width: 52,
-            height: 52,
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFF0CF),
-              borderRadius:
-                  BorderRadius.circular(16),
-            ),
-            child: const Icon(
-              Icons.wb_sunny_outlined,
-              color: Color(0xFFD19A39),
-              size: 27,
-            ),
-          ),
-
-          const SizedBox(width: 14),
-
-          const Expanded(
-            child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'أذكار الصباح',
-                  style: TextStyle(
-                    color: textDark,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-
-                SizedBox(height: 4),
-
-                Text(
-                  'ابدئي يومك بالذكر',
-                  style: TextStyle(
-                    color: Colors.black54,
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          Container(
-            width: 38,
-            height: 38,
-            decoration: const BoxDecoration(
-              color: Color(0xFFF3EFE7),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.arrow_back_ios_new_rounded,
-              color: purpleDark,
-              size: 15,
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -821,7 +832,6 @@ class _HomeScreenState extends State<HomeScreen> {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.08),
@@ -830,38 +840,23 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-
       child: NavigationBar(
         height: 72,
         backgroundColor: Colors.white,
         elevation: 0,
-
         selectedIndex: _currentIndex,
-
         onDestinationSelected: (index) {
           setState(() {
             _currentIndex = index;
           });
 
-          // ------------------------------------------------------
-          // المحادثات
-          // ------------------------------------------------------
-
           if (index == 1) {
             _openChat();
           }
 
-          // ------------------------------------------------------
-          // المكتبة
-          // ------------------------------------------------------
-
           if (index == 2) {
             _openLibrary();
           }
-
-          // ------------------------------------------------------
-          // حسابي
-          // ------------------------------------------------------
 
           if (index == 3) {
             Navigator.push(
@@ -872,9 +867,7 @@ class _HomeScreenState extends State<HomeScreen> {
             );
           }
         },
-
         indicatorColor: const Color(0xFFE9E0FA),
-
         destinations: const [
           NavigationDestination(
             icon: Icon(
@@ -895,7 +888,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Icons.chat_bubble_rounded,
               color: purple,
             ),
-            label: 'المحادثات',
+            label: 'سِراج AI',
           ),
 
           NavigationDestination(
@@ -906,7 +899,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Icons.menu_book_rounded,
               color: purple,
             ),
-            label: 'المكتبة',
+            label: 'الرقية',
           ),
 
           NavigationDestination(

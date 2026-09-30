@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
@@ -23,339 +24,561 @@ class ProfileScreen extends StatelessWidget {
             ? user.displayName!.trim()
             : 'مستخدم سِراج';
 
-    return Scaffold(
-      backgroundColor: AppColors.cream,
-
-      appBar: AppBar(
+    if (user == null) {
+      return const Scaffold(
         backgroundColor: AppColors.cream,
-        elevation: 0,
-        centerTitle: true,
-        title: const Text(
-          'حسابي',
-          style: TextStyle(
-            color: AppColors.textDark,
-            fontWeight: FontWeight.bold,
-          ),
+        body: Center(
+          child: Text('لم يتم تسجيل الدخول'),
         ),
-      ),
+      );
+    }
 
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(
-            20,
-            10,
-            20,
-            35,
+    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      stream: FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .snapshots(),
+      builder: (context, snapshot) {
+        final data = snapshot.data?.data();
+
+        final String accountType =
+            data?['accountType']?.toString().toLowerCase() ?? 'free';
+
+        final bool isPremium =
+            accountType == 'premium';
+
+        return Scaffold(
+          backgroundColor: AppColors.cream,
+
+          appBar: AppBar(
+            backgroundColor: AppColors.cream,
+            elevation: 0,
+            centerTitle: true,
+            title: const Text(
+              'حسابي',
+              style: TextStyle(
+                color: AppColors.textDark,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
 
-              // =====================================================
-              // بطاقة الحساب
-              // =====================================================
+          body: SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(
+                20,
+                10,
+                20,
+                35,
+              ),
+              child: Column(
+                crossAxisAlignment:
+                    CrossAxisAlignment.stretch,
+                children: [
 
-              Container(
-                padding: const EdgeInsets.all(22),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    begin: Alignment.topRight,
-                    end: Alignment.bottomLeft,
-                    colors: [
-                      Color(0xFF8E7CC3),
-                      Color(0xFFC99ACB),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(26),
-                  boxShadow: [
-                    BoxShadow(
-                      color: purple.withValues(alpha: 0.20),
-                      blurRadius: 20,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
+                  // =====================================================
+                  // بطاقة الحساب
+                  // =====================================================
 
-                    // الصورة
-                    Container(
-                      width: 82,
-                      height: 82,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white.withValues(
-                          alpha: 0.18,
-                        ),
-                        border: Border.all(
-                          color: Colors.white.withValues(
-                            alpha: 0.45,
-                          ),
-                          width: 2,
-                        ),
-                      ),
-                      child: const Icon(
-                        Icons.person_rounded,
-                        color: Colors.white,
-                        size: 42,
-                      ),
-                    ),
-
-                    const SizedBox(height: 15),
-
-                    // الاسم
-                    Text(
-                      name,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-
-                    const SizedBox(height: 7),
-
-                    // البريد
-                    Text(
-                      email,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.white.withValues(
-                          alpha: 0.90,
-                        ),
-                        fontSize: 13,
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // الحساب المجاني
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(
-                          alpha: 0.18,
-                        ),
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.workspace_premium_outlined,
-                            color: Colors.white,
-                            size: 18,
-                          ),
-                          SizedBox(width: 7),
-                          Text(
-                            'الحساب المجاني',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                  Container(
+                    padding: const EdgeInsets.all(22),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        begin: Alignment.topRight,
+                        end: Alignment.bottomLeft,
+                        colors: [
+                          Color(0xFF8E7CC3),
+                          Color(0xFFC99ACB),
                         ],
                       ),
+                      borderRadius:
+                          BorderRadius.circular(26),
+                      boxShadow: [
+                        BoxShadow(
+                          color: purple.withValues(
+                            alpha: 0.20,
+                          ),
+                          blurRadius: 20,
+                          offset:
+                              const Offset(0, 8),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
+                    child: Column(
+                      children: [
 
-              const SizedBox(height: 28),
+                        Container(
+                          width: 82,
+                          height: 82,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white
+                                .withValues(alpha: 0.18),
+                            border: Border.all(
+                              color: Colors.white
+                                  .withValues(alpha: 0.45),
+                              width: 2,
+                            ),
+                          ),
+                          child: const Icon(
+                            Icons.person_rounded,
+                            color: Colors.white,
+                            size: 42,
+                          ),
+                        ),
 
-              // =====================================================
-              // الحساب
-              // =====================================================
+                        const SizedBox(height: 15),
 
-              _sectionTitle('حسابك'),
+                        Text(
+                          name,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
 
-              const SizedBox(height: 12),
+                        const SizedBox(height: 7),
 
-              _ProfileOption(
-                icon: Icons.person_outline_rounded,
-                title: 'بيانات الحساب',
-                subtitle: 'عرض بيانات حسابك الحالية',
-                onTap: () {
-                  _showAccountInfo(
-                    context,
-                    name,
-                    email,
-                  );
-                },
-              ),
+                        Text(
+                          email,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.white
+                                .withValues(alpha: 0.90),
+                            fontSize: 13,
+                          ),
+                        ),
 
-              const SizedBox(height: 10),
+                        const SizedBox(height: 16),
 
-              _ProfileOption(
-                icon: Icons.workspace_premium_outlined,
-                title: 'نوع الحساب',
-                subtitle: 'الحساب المجاني',
-                onTap: () {
-                  _showAccountType(context);
-                },
-              ),
-
-              const SizedBox(height: 28),
-
-              // =====================================================
-              // سراج AI
-              // =====================================================
-
-              _sectionTitle('سِراج AI'),
-
-              const SizedBox(height: 12),
-
-              _ProfileOption(
-                icon: Icons.auto_awesome_rounded,
-                title: 'استخدام سِراج',
-                subtitle: 'معلومات استخدام خدمات سِراج AI',
-                onTap: () {
-                  _showUsageDialog(context);
-                },
-              ),
-
-              const SizedBox(height: 28),
-
-              // =====================================================
-              // الإعدادات
-              // =====================================================
-
-              _sectionTitle('الإعدادات'),
-
-              const SizedBox(height: 12),
-
-              _ProfileOption(
-                icon: Icons.settings_outlined,
-                title: 'إعدادات التطبيق',
-                subtitle: 'اللغة والمظهر وإعدادات التطبيق',
-                onTap: () {
-                  _showSettingsDialog(context);
-                },
-              ),
-
-              const SizedBox(height: 28),
-
-              // =====================================================
-              // الأمان
-              // =====================================================
-
-              _sectionTitle('الأمان'),
-
-              const SizedBox(height: 12),
-
-              _ProfileOption(
-                icon: Icons.lock_reset_outlined,
-                title: 'تغيير كلمة المرور',
-                subtitle: 'تحديث كلمة المرور الخاصة بحسابك',
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          const ChangePasswordScreen(),
+                        // نوع الحساب
+                        Container(
+                          padding:
+                              const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white
+                                .withValues(alpha: 0.18),
+                            borderRadius:
+                                BorderRadius.circular(30),
+                          ),
+                          child: Row(
+                            mainAxisSize:
+                                MainAxisSize.min,
+                            children: [
+                              Icon(
+                                isPremium
+                                    ? Icons
+                                        .workspace_premium_rounded
+                                    : Icons
+                                        .workspace_premium_outlined,
+                                color: Colors.white,
+                                size: 18,
+                              ),
+                              const SizedBox(width: 7),
+                              Text(
+                                isPremium
+                                    ? 'سِراج Plus'
+                                    : 'الحساب المجاني',
+                                style:
+                                    const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 13,
+                                  fontWeight:
+                                      FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                  );
-                },
+                  ),
+
+                  const SizedBox(height: 18),
+
+                  // =====================================================
+                  // بطاقة Plus
+                  // =====================================================
+
+                  if (!isPremium)
+                    _PlusCard(
+                      onTap: () {
+                        _showPlusDialog(context);
+                      },
+                    ),
+
+                  if (!isPremium)
+                    const SizedBox(height: 28),
+
+                  // =====================================================
+                  // الحساب
+                  // =====================================================
+
+                  _sectionTitle('حسابك'),
+
+                  const SizedBox(height: 12),
+
+                  _ProfileOption(
+                    icon:
+                        Icons.person_outline_rounded,
+                    title: 'بيانات الحساب',
+                    subtitle:
+                        'عرض بيانات حسابك الحالية',
+                    onTap: () {
+                      _showAccountInfo(
+                        context,
+                        name,
+                        email,
+                      );
+                    },
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  _ProfileOption(
+                    icon:
+                        Icons.workspace_premium_outlined,
+                    title: 'نوع الحساب',
+                    subtitle: isPremium
+                        ? 'سِراج Plus'
+                        : 'الحساب المجاني',
+                    iconColor: isPremium
+                        ? AppColors.gold
+                        : purple,
+                    onTap: () {
+                      _showAccountType(
+                        context,
+                        isPremium,
+                      );
+                    },
+                  ),
+
+                  const SizedBox(height: 28),
+
+                  // =====================================================
+                  // سراج AI
+                  // =====================================================
+
+                  _sectionTitle('سِراج AI'),
+
+                  const SizedBox(height: 12),
+
+                  _ProfileOption(
+                    icon:
+                        Icons.auto_awesome_rounded,
+                    title: 'استخدام سِراج',
+                    subtitle: isPremium
+                        ? 'حساب Plus — استخدام موسع'
+                        : 'عرض استخدام خدمات سِراج AI',
+                    onTap: () {
+                      _showUsageDialog(
+                        context,
+                        isPremium,
+                      );
+                    },
+                  ),
+
+                  const SizedBox(height: 28),
+
+                  // =====================================================
+                  // الإعدادات
+                  // =====================================================
+
+                  _sectionTitle('الإعدادات'),
+
+                  const SizedBox(height: 12),
+
+                  _ProfileOption(
+                    icon:
+                        Icons.settings_outlined,
+                    title: 'إعدادات التطبيق',
+                    subtitle:
+                        'اللغة والمظهر وإعدادات التطبيق',
+                    onTap: () {
+                      _showSettingsDialog(context);
+                    },
+                  ),
+
+                  const SizedBox(height: 28),
+
+                  // =====================================================
+                  // الأمان
+                  // =====================================================
+
+                  _sectionTitle('الأمان'),
+
+                  const SizedBox(height: 12),
+
+                  _ProfileOption(
+                    icon:
+                        Icons.lock_reset_outlined,
+                    title: 'تغيير كلمة المرور',
+                    subtitle:
+                        'تحديث كلمة المرور الخاصة بحسابك',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              const ChangePasswordScreen(),
+                        ),
+                      );
+                    },
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  _ProfileOption(
+                    icon:
+                        Icons.delete_outline_rounded,
+                    title: 'حذف الحساب',
+                    subtitle:
+                        'حذف حسابك وبيانات تسجيل الدخول',
+                    iconColor: Colors.redAccent,
+                    onTap: () {
+                      _deleteAccount(context);
+                    },
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  _ProfileOption(
+                    icon:
+                        Icons.logout_rounded,
+                    title: 'تسجيل الخروج',
+                    subtitle:
+                        'الخروج من حساب سِراج',
+                    iconColor: Colors.redAccent,
+                    onTap: () {
+                      _logout(context);
+                    },
+                  ),
+
+                  const SizedBox(height: 28),
+
+                  // =====================================================
+                  // حول سراج
+                  // =====================================================
+
+                  _sectionTitle('حول سِراج'),
+
+                  const SizedBox(height: 12),
+
+                  _ProfileOption(
+                    icon:
+                        Icons.info_outline_rounded,
+                    title: 'عن سِراج',
+                    subtitle:
+                        'معلومات عن التطبيق والإصدار',
+                    onTap: () {
+                      _showAbout(context);
+                    },
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  _ProfileOption(
+                    icon:
+                        Icons.privacy_tip_outlined,
+                    title: 'الخصوصية',
+                    subtitle:
+                        'معلومات الخصوصية وحماية البيانات',
+                    onTap: () {
+                      _showPrivacy(context);
+                    },
+                  ),
+
+                  const SizedBox(height: 30),
+
+                  const Text(
+                    'سِراج',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textDark,
+                    ),
+                  ),
+
+                  const SizedBox(height: 5),
+
+                  const Text(
+                    'الإصدار 1.0.0',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.grey,
+                    ),
+                  ),
+
+                  const SizedBox(height: 5),
+
+                  const Text(
+                    'جميع الحقوق محفوظة',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Colors.grey,
+                    ),
+                  ),
+                ],
               ),
-
-              const SizedBox(height: 10),
-
-              _ProfileOption(
-                icon: Icons.delete_outline_rounded,
-                title: 'حذف الحساب',
-                subtitle: 'حذف حسابك وبيانات تسجيل الدخول',
-                iconColor: Colors.redAccent,
-                onTap: () {
-                  _deleteAccount(context);
-                },
-              ),
-
-              const SizedBox(height: 10),
-
-              _ProfileOption(
-                icon: Icons.logout_rounded,
-                title: 'تسجيل الخروج',
-                subtitle: 'الخروج من حساب سِراج',
-                iconColor: Colors.redAccent,
-                onTap: () {
-                  _logout(context);
-                },
-              ),
-
-              const SizedBox(height: 28),
-
-              // =====================================================
-              // حول سراج
-              // =====================================================
-
-              _sectionTitle('حول سِراج'),
-
-              const SizedBox(height: 12),
-
-              _ProfileOption(
-                icon: Icons.info_outline_rounded,
-                title: 'عن سِراج',
-                subtitle: 'معلومات عن التطبيق والإصدار',
-                onTap: () {
-                  _showAbout(context);
-                },
-              ),
-
-              const SizedBox(height: 10),
-
-              _ProfileOption(
-                icon: Icons.privacy_tip_outlined,
-                title: 'الخصوصية',
-                subtitle: 'معلومات الخصوصية وحماية البيانات',
-                onTap: () {
-                  _showPrivacy(context);
-                },
-              ),
-
-              const SizedBox(height: 30),
-
-              // =====================================================
-              // الإصدار
-              // =====================================================
-
-              const Text(
-                'سِراج',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textDark,
-                ),
-              ),
-
-              const SizedBox(height: 5),
-
-              const Text(
-                'الإصدار 1.0.0',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Colors.grey,
-                ),
-              ),
-
-              const SizedBox(height: 5),
-
-              const Text(
-                'جميع الحقوق محفوظة',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 10,
-                  color: Colors.grey,
-                ),
-              ),
-            ],
+            ),
           ),
+        );
+      },
+    );
+  }
+
+  // ===============================================================
+  // بطاقة Plus
+  // ===============================================================
+
+  Widget _PlusCard({
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topRight,
+          end: Alignment.bottomLeft,
+          colors: [
+            Color(0xFF25213F),
+            Color(0xFF4A3D70),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(
+              alpha: 0.18,
+            ),
+            blurRadius: 18,
+            offset: const Offset(0, 7),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment:
+              CrossAxisAlignment.stretch,
+          children: [
+
+            Row(
+              children: [
+                Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    color: AppColors.gold.withValues(
+                      alpha: 0.16,
+                    ),
+                    borderRadius:
+                        BorderRadius.circular(16),
+                  ),
+                  child: const Icon(
+                    Icons.workspace_premium_rounded,
+                    color: AppColors.gold,
+                    size: 29,
+                  ),
+                ),
+
+                const SizedBox(width: 14),
+
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment:
+                        CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'سِراج Plus',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 19,
+                          fontWeight:
+                              FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        'افتح تجربة سِراج الكاملة',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  color: AppColors.gold,
+                  size: 18,
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 18),
+
+            const Text(
+              'مع سِراج Plus تحصل على محتوى أوسع وتجربة أكثر تكاملًا.',
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                color: Colors.white,
+                height: 1.6,
+                fontSize: 13,
+              ),
+            ),
+
+            const SizedBox(height: 14),
+
+            const _PlusFeature(
+              icon: Icons.auto_awesome_rounded,
+              text: 'استخدام موسع لسِراج AI',
+            ),
+
+            const _PlusFeature(
+              icon: Icons.menu_book_rounded,
+              text: 'محتوى إضافي في مكتبة سِراج',
+            ),
+
+            const _PlusFeature(
+              icon: Icons.lock_open_rounded,
+              text: 'فتح أقسام Plus الخاصة',
+            ),
+
+            const SizedBox(height: 16),
+
+            SizedBox(
+              height: 48,
+              child: ElevatedButton(
+                onPressed: onTap,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.gold,
+                  foregroundColor:
+                      AppColors.primaryDark,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius:
+                        BorderRadius.circular(16),
+                  ),
+                ),
+                child: const Text(
+                  'استكشف سِراج Plus',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -396,7 +619,8 @@ class ProfileScreen extends StatelessWidget {
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+            crossAxisAlignment:
+                CrossAxisAlignment.stretch,
             children: [
               _InfoRow(
                 title: 'الاسم',
@@ -411,7 +635,8 @@ class ProfileScreen extends StatelessWidget {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () =>
+                  Navigator.pop(context),
               child: const Text('إغلاق'),
             ),
           ],
@@ -424,7 +649,10 @@ class ProfileScreen extends StatelessWidget {
   // نوع الحساب
   // ===============================================================
 
-  void _showAccountType(BuildContext context) {
+  void _showAccountType(
+    BuildContext context,
+    bool isPremium,
+  ) {
     showDialog(
       context: context,
       builder: (_) {
@@ -433,27 +661,35 @@ class ProfileScreen extends StatelessWidget {
             'نوع الحساب',
             textAlign: TextAlign.right,
           ),
-          content: const Column(
+          content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                Icons.workspace_premium_rounded,
-                color: purple,
+                isPremium
+                    ? Icons.workspace_premium_rounded
+                    : Icons.workspace_premium_outlined,
+                color: isPremium
+                    ? AppColors.gold
+                    : purple,
                 size: 48,
               ),
-              SizedBox(height: 15),
+              const SizedBox(height: 15),
               Text(
-                'الحساب المجاني',
-                style: TextStyle(
+                isPremium
+                    ? 'سِراج Plus'
+                    : 'الحساب المجاني',
+                style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              SizedBox(height: 8),
+              const SizedBox(height: 8),
               Text(
-                'يمكنك استخدام الخدمات المتاحة للحساب المجاني.',
+                isPremium
+                    ? 'حسابك مشترك في سِراج Plus.'
+                    : 'يمكنك استخدام الخدمات المتاحة للحساب المجاني.',
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: const TextStyle(
                   height: 1.6,
                 ),
               ),
@@ -461,7 +697,8 @@ class ProfileScreen extends StatelessWidget {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () =>
+                  Navigator.pop(context),
               child: const Text('موافق'),
             ),
           ],
@@ -474,7 +711,10 @@ class ProfileScreen extends StatelessWidget {
   // استخدام سراج
   // ===============================================================
 
-  void _showUsageDialog(BuildContext context) {
+  void _showUsageDialog(
+    BuildContext context,
+    bool isPremium,
+  ) {
     showDialog(
       context: context,
       builder: (_) {
@@ -483,27 +723,31 @@ class ProfileScreen extends StatelessWidget {
             'استخدام سِراج',
             textAlign: TextAlign.right,
           ),
-          content: const Column(
+          content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
+              const Icon(
                 Icons.auto_awesome_rounded,
                 color: purple,
                 size: 45,
               ),
-              SizedBox(height: 15),
+              const SizedBox(height: 15),
               Text(
-                'الحساب المجاني',
-                style: TextStyle(
+                isPremium
+                    ? 'سِراج Plus'
+                    : 'الحساب المجاني',
+                style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              SizedBox(height: 10),
+              const SizedBox(height: 10),
               Text(
-                'سيتم ربط إحصاءات الاستخدام الفعلية مع خدمات سِراج AI عند تفعيل نظام الاستخدام.',
+                isPremium
+                    ? 'حساب Plus — استخدام موسع لخدمات سِراج AI.'
+                    : 'الحساب المجاني — حد الاستخدام الحالي يتم احتسابه من خادم سِراج.',
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: const TextStyle(
                   height: 1.6,
                 ),
               ),
@@ -511,7 +755,49 @@ class ProfileScreen extends StatelessWidget {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () =>
+                  Navigator.pop(context),
+              child: const Text('موافق'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // ===============================================================
+  // نافذة Plus
+  // ===============================================================
+
+  void _showPlusDialog(
+    BuildContext context,
+  ) {
+    showDialog(
+      context: context,
+      builder: (_) {
+        return AlertDialog(
+          title: const Row(
+            children: [
+              Icon(
+                Icons.workspace_premium_rounded,
+                color: AppColors.gold,
+              ),
+              SizedBox(width: 8),
+              Text('سِراج Plus'),
+            ],
+          ),
+          content: const Text(
+            'سيتم تفعيل الاشتراك والدفع الإلكتروني في الخطوة القادمة.\n\n'
+            'حاليًا نحن نجهز بنية الحساب والميزات المدفوعة حتى يكون الربط بالدفع الحقيقي آمنًا وصحيحًا.',
+            textAlign: TextAlign.right,
+            style: TextStyle(
+              height: 1.7,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () =>
+                  Navigator.pop(context),
               child: const Text('موافق'),
             ),
           ],
@@ -524,7 +810,9 @@ class ProfileScreen extends StatelessWidget {
   // إعدادات التطبيق
   // ===============================================================
 
-  void _showSettingsDialog(BuildContext context) {
+  void _showSettingsDialog(
+    BuildContext context,
+  ) {
     showDialog(
       context: context,
       builder: (_) {
@@ -559,7 +847,8 @@ class ProfileScreen extends StatelessWidget {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () =>
+                  Navigator.pop(context),
               child: const Text('إغلاق'),
             ),
           ],
@@ -616,7 +905,8 @@ class ProfileScreen extends StatelessWidget {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () =>
+                  Navigator.pop(context),
               child: const Text('موافق'),
             ),
           ],
@@ -638,7 +928,8 @@ class ProfileScreen extends StatelessWidget {
             'الخصوصية',
             textAlign: TextAlign.right,
           ),
-          content: const SingleChildScrollView(
+          content:
+              const SingleChildScrollView(
             child: Text(
               'نحترم خصوصية المستخدم ونسعى إلى حماية بيانات الحساب والمعلومات التي يتم إدخالها داخل التطبيق. '
               'سيتم توضيح سياسة الخصوصية الكاملة قبل إطلاق النسخة النهائية من التطبيق.',
@@ -650,7 +941,8 @@ class ProfileScreen extends StatelessWidget {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () =>
+                  Navigator.pop(context),
               child: const Text('إغلاق'),
             ),
           ],
@@ -666,7 +958,8 @@ class ProfileScreen extends StatelessWidget {
   Future<void> _deleteAccount(
     BuildContext context,
   ) async {
-    final confirm = await showDialog<bool>(
+    final confirm =
+        await showDialog<bool>(
       context: context,
       builder: (_) {
         return AlertDialog(
@@ -675,7 +968,8 @@ class ProfileScreen extends StatelessWidget {
             textAlign: TextAlign.right,
           ),
           content: const Text(
-            'هل أنت متأكد من حذف حسابك؟\n\nهذا الإجراء لا ينبغي تنفيذه إلا بعد ربط حذف بيانات المستخدم من Firebase.',
+            'هل أنت متأكد من حذف حسابك؟\n\n'
+            'هذا الإجراء لا ينبغي تنفيذه إلا بعد ربط حذف بيانات المستخدم من Firebase.',
             textAlign: TextAlign.right,
             style: TextStyle(
               height: 1.6,
@@ -684,13 +978,19 @@ class ProfileScreen extends StatelessWidget {
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.pop(context, false);
+                Navigator.pop(
+                  context,
+                  false,
+                );
               },
               child: const Text('إلغاء'),
             ),
             TextButton(
               onPressed: () {
-                Navigator.pop(context, true);
+                Navigator.pop(
+                  context,
+                  true,
+                );
               },
               child: const Text(
                 'متابعة',
@@ -712,7 +1012,8 @@ class ProfileScreen extends StatelessWidget {
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
+    ScaffoldMessenger.of(context)
+        .showSnackBar(
       const SnackBar(
         content: Text(
           'سيتم تفعيل حذف الحساب الكامل عند ربط نظام حذف بيانات المستخدم.',
@@ -744,13 +1045,19 @@ class ProfileScreen extends StatelessWidget {
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.pop(context, false);
+                Navigator.pop(
+                  context,
+                  false,
+                );
               },
               child: const Text('إلغاء'),
             ),
             TextButton(
               onPressed: () {
-                Navigator.pop(context, true);
+                Navigator.pop(
+                  context,
+                  true,
+                );
               },
               child: const Text(
                 'تسجيل الخروج',
@@ -781,6 +1088,48 @@ class ProfileScreen extends StatelessWidget {
 }
 
 // ==================================================================
+// ميزة Plus
+// ==================================================================
+
+class _PlusFeature extends StatelessWidget {
+  final IconData icon;
+  final String text;
+
+  const _PlusFeature({
+    required this.icon,
+    required this.text,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding:
+          const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          Icon(
+            icon,
+            color: AppColors.gold,
+            size: 17,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              textAlign: TextAlign.right,
+              style: const TextStyle(
+                color: Colors.white70,
+                fontSize: 12,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ==================================================================
 // صف معلومات
 // ==================================================================
 
@@ -799,10 +1148,12 @@ class _InfoRow extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: const Color(0xFFF7F3F9),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius:
+            BorderRadius.circular(14),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
         children: [
           Text(
             title,
@@ -829,7 +1180,8 @@ class _InfoRow extends StatelessWidget {
 // عنصر الحساب
 // ==================================================================
 
-class _ProfileOption extends StatelessWidget {
+class _ProfileOption
+    extends StatelessWidget {
   final IconData icon;
   final String title;
   final String subtitle;
@@ -848,10 +1200,12 @@ class _ProfileOption extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: Colors.white,
-      borderRadius: BorderRadius.circular(20),
+      borderRadius:
+          BorderRadius.circular(20),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius:
+            BorderRadius.circular(20),
         child: Padding(
           padding: const EdgeInsets.all(17),
           child: Row(
@@ -860,8 +1214,11 @@ class _ProfileOption extends StatelessWidget {
                 width: 52,
                 height: 52,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEDE6F5),
-                  borderRadius: BorderRadius.circular(16),
+                  color: const Color(
+                    0xFFEDE6F5,
+                  ),
+                  borderRadius:
+                      BorderRadius.circular(16),
                 ),
                 child: Icon(
                   icon,
@@ -882,8 +1239,10 @@ class _ProfileOption extends StatelessWidget {
                       title,
                       style: const TextStyle(
                         fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textDark,
+                        fontWeight:
+                            FontWeight.bold,
+                        color:
+                            AppColors.textDark,
                       ),
                     ),
                     const SizedBox(height: 5),
@@ -891,7 +1250,8 @@ class _ProfileOption extends StatelessWidget {
                       subtitle,
                       style: const TextStyle(
                         fontSize: 12,
-                        color: AppColors.textDark,
+                        color:
+                            AppColors.textDark,
                       ),
                     ),
                   ],
