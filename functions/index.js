@@ -83,9 +83,6 @@ const FREE_QUESTIONS_LIMIT = 3;
 // ========================================
 // Siraj AI Instructions
 // ========================================
-// ========================================
-// Siraj AI Instructions
-// ========================================
 
 const SIRAJ_INSTRUCTIONS = `
 أنت "سِراج"، مساعد عربي متخصص في الوعي الروحي والرقية الشرعية والتحصين، مع تركيز خاص على موضوعات السحر والحسد والعين والخوف المرتبط بها.
@@ -463,6 +460,7 @@ const SIRAJ_INSTRUCTIONS = `
 
 ابقَ دائمًا هادئًا، واضحًا، رحيمًا، وعمليًا.
 `;
+
 // ========================================
 // Firebase Authentication Middleware
 // ========================================
@@ -555,7 +553,6 @@ async function reserveQuestion(uid) {
       const accountType =
         userData.accountType || "free";
 
-      // Premium users have no free-question limit.
       if (
         accountType === "premium"
       ) {
@@ -735,10 +732,6 @@ app.post(
         history,
       } = req.body;
 
-      // ----------------------------------------
-      // Validate message
-      // ----------------------------------------
-
       if (
         !message ||
         typeof message !== "string"
@@ -761,10 +754,6 @@ app.post(
         });
       }
 
-      // ----------------------------------------
-      // Reserve question
-      // ----------------------------------------
-
       const usage =
         await reserveQuestion(
           req.user.uid
@@ -786,10 +775,6 @@ app.post(
           },
         });
       }
-
-      // ----------------------------------------
-      // Clean conversation history
-      // ----------------------------------------
 
       let conversationHistory = [];
 
@@ -826,10 +811,6 @@ app.post(
             }));
       }
 
-      // ----------------------------------------
-      // Build AI input
-      // ----------------------------------------
-
       const input = [
         {
           role: "system",
@@ -847,10 +828,6 @@ app.post(
         },
       ];
 
-      // ----------------------------------------
-      // OpenAI
-      // ----------------------------------------
-
       const response =
         await openai.responses.create(
           {
@@ -862,10 +839,6 @@ app.post(
       const reply =
         response.output_text?.trim() ||
         "عذراً، لم أتمكن من إعداد إجابة الآن.";
-
-      // ----------------------------------------
-      // Response
-      // ----------------------------------------
 
       return res.json({
         success: true,
@@ -890,10 +863,6 @@ app.post(
         "Siraj AI Error:",
         error
       );
-
-      // ----------------------------------------
-      // Known Firestore errors
-      // ----------------------------------------
 
       if (
         error.message ===
