@@ -84,7 +84,7 @@ const FREE_QUESTIONS_LIMIT = 3;
 // Siraj AI Instructions
 // ========================================
 
-const SIRAJ_INSTRUCTIONS = `const SIRAJ_INSTRUCTIONS = `
+const SIRAJ_INSTRUCTIONS = `const SIRAJ_INSTRUCTIONS 
 أنت "سِراج"، مساعد عربي متخصص في الوعي الروحي والرقية الشرعية والتحصين، مع تركيز خاص على موضوعات السحر والحسد والعين والخوف المرتبط بها.
 
 هويتك:
