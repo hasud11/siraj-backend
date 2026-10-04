@@ -26,6 +26,9 @@ require("dotenv").config();
 
 const app = express();
 
+// Render يعمل خلف Reverse Proxy
+app.set("trust proxy", 1);
+
 
 // ======================================================
 // Security Configuration
