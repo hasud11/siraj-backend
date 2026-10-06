@@ -25,6 +25,16 @@ const {
 require("dotenv").config();
 
 const app = express();
+app.use((req, res, next) => {
+  console.log(
+    "🌐 REQUEST:",
+    req.method,
+    req.originalUrl,
+    "IP:",
+    req.ip
+  );
+  next();
+});
 
 // Render يعمل خلف Reverse Proxy
 app.set("trust proxy", 1);
