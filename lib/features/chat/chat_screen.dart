@@ -4,11 +4,25 @@ import '../../core/constants/app_colors.dart';
 import '../../services/ai_service.dart';
 
 class ChatScreen extends StatefulWidget {
+  // ============================================================
+  // الرسالة التي تظهر للمستخدم
+  // ============================================================
+
   final String? initialMessage;
+
+  // ============================================================
+  // تعليمات داخلية لسِراج
+  //
+  // هذه لا تظهر للمستخدم.
+  // تستخدم فقط لتوجيه الذكاء الاصطناعي.
+  // ============================================================
+
+  final String? initialContext;
 
   const ChatScreen({
     super.key,
     this.initialMessage,
+    this.initialContext,
   });
 
   @override
@@ -39,7 +53,7 @@ class _ChatScreenState extends State<ChatScreen> {
       ScrollController();
 
   // ============================================================
-  // الرسائل
+  // الرسائل الظاهرة للمستخدم
   // ============================================================
 
   final List<_ChatMessage> _messages = [
@@ -75,10 +89,6 @@ class _ChatScreenState extends State<ChatScreen> {
 
   // ============================================================
   // تحميل بيانات الحساب من AiService
-  //
-  // مهم:
-  // Flutter لا يكتب العداد في Firestore.
-  // Backend هو المسؤول عن العداد.
   // ============================================================
 
   Future<void> _loadAccountData() async {
@@ -95,7 +105,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
     setState(() {});
 
-    // إذا تم فتح سراج من الأذكار بسؤال محدد
+    // إذا تم فتح سراج برسالة محددة
     if (widget.initialMessage != null &&
         widget.initialMessage!.trim().isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -113,14 +123,6 @@ class _ChatScreenState extends State<ChatScreen> {
   bool get _isPremium {
     return _aiService.isPremium;
   }
-
-  // ============================================================
-  // عدد الأسئلة المستخدمة
-  //
-  // القيمة تأتي من Backend عبر AiService.
-  // ============================================================
-
-  
 
   // ============================================================
   // الأسئلة المتبقية
@@ -143,9 +145,6 @@ class _ChatScreenState extends State<ChatScreen> {
 
   // ============================================================
   // هل يستطيع المستخدم إرسال سؤال؟
-  //
-  // هذه ليست الحماية الأمنية النهائية.
-  // Backend هو الذي يقرر فعليًا.
   // ============================================================
 
   bool get _canAsk {
@@ -154,6 +153,30 @@ class _ChatScreenState extends State<ChatScreen> {
     }
 
     return !_aiService.hasReachedFreeLimit;
+  }
+
+  // ============================================================
+  // بناء الطلب الذي يذهب إلى سِراج
+  //
+  // مهم:
+  // initialContext لا يظهر للمستخدم.
+  // ============================================================
+
+  String _buildPromptForSiraj(String userMessage) {
+    final cleanMessage = userMessage.trim();
+
+    final context = widget.initialContext?.trim();
+
+    if (context == null || context.isEmpty) {
+      return cleanMessage;
+    }
+
+    return '''
+$context
+
+رسالة المستخدم:
+$cleanMessage
+''';
   }
 
   // ============================================================
@@ -207,9 +230,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     size: 32,
                   ),
                 ),
-
                 const SizedBox(height: 18),
-
                 const Text(
                   'انتهت أسئلتك المجانية',
                   textAlign: TextAlign.center,
@@ -219,9 +240,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-
                 const SizedBox(height: 10),
-
                 const Text(
                   'لقد استخدمتِ الأسئلة الثلاثة المجانية.\n\n'
                   'إذا كنتِ تريدين مواصلة الحديث مع سِراج '
@@ -234,9 +253,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     height: 1.7,
                   ),
                 ),
-
                 const SizedBox(height: 20),
-
                 SizedBox(
                   width: double.infinity,
                   height: 50,
@@ -254,7 +271,6 @@ class _ChatScreenState extends State<ChatScreen> {
                     child: ElevatedButton(
                       onPressed: () {
                         Navigator.pop(context);
-
                         _showSubscriptionComingSoon();
                       },
                       style: ElevatedButton.styleFrom(
@@ -278,9 +294,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     ),
                   ),
                 ),
-
                 const SizedBox(height: 8),
-
                 TextButton(
                   onPressed: () {
                     Navigator.pop(context);
@@ -332,7 +346,7 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   // ============================================================
-  // إرسال السؤال الأول القادم من الأذكار
+  // إرسال السؤال الأول
   // ============================================================
 
   Future<void> _sendInitialMessage(String text) async {
@@ -340,17 +354,30 @@ class _ChatScreenState extends State<ChatScreen> {
       return;
     }
 
-    // فحص محلي سريع فقط.
-    // Backend يبقى صاحب القرار النهائي.
     if (!_canAsk) {
       _showSubscriptionDialog();
       return;
     }
 
+    // ----------------------------------------------------------
+    // النص الذي يظهر للمستخدم
+    // ----------------------------------------------------------
+
+    final visibleMessage = text;
+
+    // ----------------------------------------------------------
+    // النص الذي يذهب إلى الذكاء الاصطناعي
+    //
+    // يحتوي على initialContext إذا وجد.
+    // ----------------------------------------------------------
+
+    final promptForSiraj =
+        _buildPromptForSiraj(text);
+
     setState(() {
       _messages.add(
         _ChatMessage(
-          text: text,
+          text: visibleMessage,
           isUser: true,
         ),
       );
@@ -362,7 +389,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
     try {
       final response = await _aiService.ask(
-        text,
+        promptForSiraj,
         history: const [],
       );
 
@@ -370,9 +397,10 @@ class _ChatScreenState extends State<ChatScreen> {
         return;
       }
 
+      // في سجل المحادثة نحتفظ فقط برسالة المستخدم الحقيقية.
       _conversationHistory.add({
         'role': 'user',
-        'content': text,
+        'content': visibleMessage,
       });
 
       _conversationHistory.add({
@@ -393,7 +421,6 @@ class _ChatScreenState extends State<ChatScreen> {
 
       _scrollToBottom();
 
-      // تحديث الواجهة بعد أن قام Backend بتحديث العداد.
       setState(() {});
 
       if (!_isPremium &&
@@ -453,7 +480,6 @@ class _ChatScreenState extends State<ChatScreen> {
       return;
     }
 
-    // فحص محلي سريع فقط.
     if (!_canAsk) {
       FocusScope.of(context).unfocus();
       _showSubscriptionDialog();
@@ -464,6 +490,14 @@ class _ChatScreenState extends State<ChatScreen> {
         List<Map<String, String>>.from(
       _conversationHistory,
     );
+
+    // ----------------------------------------------------------
+    // التعليمات الداخلية تبقى موجودة في كل رسالة
+    // حتى تبقى هوية الوظيفة الخاصة محفوظة أثناء المحادثة.
+    // ----------------------------------------------------------
+
+    final promptForSiraj =
+        _buildPromptForSiraj(text);
 
     setState(() {
       _messages.add(
@@ -481,13 +515,17 @@ class _ChatScreenState extends State<ChatScreen> {
 
     try {
       final response = await _aiService.ask(
-        text,
+        promptForSiraj,
         history: historyForRequest,
       );
 
       if (!mounted) {
         return;
       }
+
+      // --------------------------------------------------------
+      // نخزن الرسالة الظاهرة فقط في تاريخ المحادثة.
+      // --------------------------------------------------------
 
       _conversationHistory.add({
         'role': 'user',
@@ -516,15 +554,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
       _scrollToBottom();
 
-      // ========================================================
-      // تحديث العداد من البيانات التي أعادها Backend
-      // ========================================================
-
       setState(() {});
-
-      // ========================================================
-      // بعد السؤال الثالث
-      // ========================================================
 
       if (!_isPremium &&
           _aiService.hasReachedFreeLimit) {
@@ -1149,7 +1179,6 @@ class _MessageInput
         crossAxisAlignment:
             CrossAxisAlignment.end,
         children: [
-          // زر الإرسال
           Container(
             width: 48,
             height: 48,
@@ -1189,7 +1218,6 @@ class _MessageInput
             width: 10,
           ),
 
-          // حقل الكتابة
           Expanded(
             child: TextField(
               controller:

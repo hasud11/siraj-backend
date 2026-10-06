@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+
 import '../profile/profile_screen.dart';
-import '../checker/checker_screen.dart';
 import '../chat/chat_screen.dart';
-import '../consultation/consultation_screen.dart';
 import '../adhkar/adhkar_screen.dart';
+import '../adhkar/data/dhikr_data.dart';
+import '../magic_checker/is_this_magic_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -58,7 +59,317 @@ class _HomeScreenState extends State<HomeScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => const CheckerScreen(),
+        builder: (_) => const IsThisMagicScreen(),
+      ),
+    );
+  }
+
+  // ============================================================
+  // بوابة الاشتراك
+  // ============================================================
+
+  void _openSubscriptionGate(String serviceName) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (sheetContext) {
+        final screenHeight =
+            MediaQuery.of(sheetContext).size.height;
+
+        return Directionality(
+          textDirection: TextDirection.rtl,
+          child: Container(
+            constraints: BoxConstraints(
+              maxHeight: screenHeight * 0.90,
+            ),
+            decoration: const BoxDecoration(
+              color: cream,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(32),
+                topRight: Radius.circular(32),
+              ),
+            ),
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  22,
+                  12,
+                  22,
+                  18,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // ------------------------------------------------
+                    // المقبض
+                    // ------------------------------------------------
+
+                    Container(
+                      width: 42,
+                      height: 5,
+                      margin: const EdgeInsets.only(
+                        bottom: 20,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFD8D0C6),
+                        borderRadius:
+                            BorderRadius.circular(20),
+                      ),
+                    ),
+
+                    // ------------------------------------------------
+                    // الأيقونة
+                    // ------------------------------------------------
+
+                    Container(
+                      width: 68,
+                      height: 68,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [
+                            Color(0xFF6547A8),
+                            Color(0xFF9A7BDD),
+                          ],
+                          begin: Alignment.topRight,
+                          end: Alignment.bottomLeft,
+                        ),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color:
+                                purple.withOpacity(0.20),
+                            blurRadius: 18,
+                            offset: const Offset(0, 7),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.lock_rounded,
+                        color: Colors.white,
+                        size: 30,
+                      ),
+                    ),
+
+                    const SizedBox(height: 14),
+
+                    // ------------------------------------------------
+                    // العنوان
+                    // ------------------------------------------------
+
+                    Text(
+                      serviceName,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: textDark,
+                        fontSize: 21,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+
+                    const SizedBox(height: 7),
+
+                    const Text(
+                      'هذه الخدمة متاحة ضمن اشتراك سِراج',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Color(0xFF6F6878),
+                        fontSize: 14,
+                        height: 1.4,
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // ------------------------------------------------
+                    // بطاقة الاشتراك
+                    // ------------------------------------------------
+
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius:
+                            BorderRadius.circular(22),
+                        border: Border.all(
+                          color:
+                              const Color(0xFFE8E0D7),
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment:
+                            CrossAxisAlignment.start,
+                        children: [
+                          const Row(
+                            children: [
+                              Icon(
+                                Icons.auto_awesome_rounded,
+                                color: Color(0xFFD19A39),
+                                size: 21,
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                'اشتراك سِراج',
+                                style: TextStyle(
+                                  color: textDark,
+                                  fontSize: 16,
+                                  fontWeight:
+                                      FontWeight.w800,
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 10),
+
+                          _subscriptionFeature(
+                            'تفسير الأحلام',
+                          ),
+
+                          _subscriptionFeature(
+                            'الاستشارة البشرية',
+                          ),
+
+                          _subscriptionFeature(
+                            'تجربة سِراج الكاملة',
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // ------------------------------------------------
+                    // زر الاشتراك
+                    // ------------------------------------------------
+
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.pop(sheetContext);
+                          _showComingSoonMessage();
+                        },
+                        style:
+                            ElevatedButton.styleFrom(
+                          backgroundColor: purple,
+                          foregroundColor:
+                              Colors.white,
+                          elevation: 0,
+                          shape:
+                              RoundedRectangleBorder(
+                            borderRadius:
+                                BorderRadius.circular(
+                              18,
+                            ),
+                          ),
+                        ),
+                        child: const Text(
+                          'اشترك الآن',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight:
+                                FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 4),
+
+                    // ------------------------------------------------
+                    // إغلاق
+                    // ------------------------------------------------
+
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pop(sheetContext);
+                      },
+                      child: const Text(
+                        'ليس الآن',
+                        style: TextStyle(
+                          color: Color(0xFF716A78),
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // ============================================================
+  // ميزة ضمن الاشتراك
+  // ============================================================
+
+  Widget _subscriptionFeature(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(
+        top: 9,
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 24,
+            height: 24,
+            decoration: BoxDecoration(
+              color: const Color(0xFFEDE5FA),
+              borderRadius:
+                  BorderRadius.circular(8),
+            ),
+            child: const Icon(
+              Icons.check_rounded,
+              color: purple,
+              size: 16,
+            ),
+          ),
+          const SizedBox(width: 9),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(
+                color: Color(0xFF4F485A),
+                fontSize: 13,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ============================================================
+  // رسالة مؤقتة للاشتراك
+  // ============================================================
+
+  void _showComingSoonMessage() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: purpleDark,
+        margin: const EdgeInsets.all(16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        content: const Directionality(
+          textDirection: TextDirection.rtl,
+          child: Text(
+            'سيتم تفعيل نظام الاشتراك قريبًا.',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 13,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -160,46 +471,87 @@ class _HomeScreenState extends State<HomeScreen> {
           sliver: SliverGrid(
             delegate: SliverChildListDelegate(
               [
+                // --------------------------------------------------
+                // اسأل سراج
+                // --------------------------------------------------
+
                 _buildFeatureCard(
                   icon: Icons.auto_awesome_rounded,
                   title: 'اسأل سِراج',
                   subtitle: 'عن السحر والحسد',
-                  iconBackground: const Color(0xFFE8DFFF),
-                  iconColor: const Color(0xFF6643A8),
+                  iconBackground:
+                      const Color(0xFFE8DFFF),
+                  iconColor:
+                      const Color(0xFF6643A8),
                   onTap: _openChat,
                 ),
+
+                // --------------------------------------------------
+                // الرقية والأذكار
+                // --------------------------------------------------
 
                 _buildFeatureCard(
                   icon: Icons.menu_book_rounded,
                   title: 'الرقية والأذكار',
                   subtitle: 'تحصين وذكر موثوق',
-                  iconBackground: const Color(0xFFE4F0EA),
-                  iconColor: const Color(0xFF42816D),
+                  iconBackground:
+                      const Color(0xFFE4F0EA),
+                  iconColor:
+                      const Color(0xFF42816D),
                   onTap: _openLibrary,
                 ),
+
+                // --------------------------------------------------
+                // تفسير الأحلام - اشتراك
+                // --------------------------------------------------
+
+                _buildFeatureCard(
+                  icon: Icons.nightlight_round,
+                  title: 'تفسير الأحلام',
+                  subtitle: 'ضمن اشتراك سِراج',
+                  iconBackground:
+                      const Color(0xFFFFF0CF),
+                  iconColor:
+                      const Color(0xFFD19A39),
+                  locked: true,
+                  onTap: () {
+                    _openSubscriptionGate(
+                      'تفسير الأحلام',
+                    );
+                  },
+                ),
+
+                // --------------------------------------------------
+                // تحليل رسالة أو ادعاء
+                // --------------------------------------------------
 
                 _buildFeatureCard(
                   icon: Icons.shield_rounded,
                   title: 'حلّل رسالة أو ادعاء',
                   subtitle: 'انتبه للاستغلال والتخويف',
-                  iconBackground: const Color(0xFFE9E7F6),
-                  iconColor: const Color(0xFF6557A2),
+                  iconBackground:
+                      const Color(0xFFE9E7F6),
+                  iconColor:
+                      const Color(0xFF6557A2),
                   onTap: _openChecker,
                 ),
+
+                // --------------------------------------------------
+                // الاستشارة البشرية - اشتراك
+                // --------------------------------------------------
 
                 _buildFeatureCard(
                   icon: Icons.person_rounded,
                   title: 'استشارة بشرية',
-                  subtitle: 'مساعدة موثوقة عند الحاجة',
-                  iconBackground: const Color(0xFFFFEBD8),
-                  iconColor: const Color(0xFFA66D39),
+                  subtitle: 'ضمن اشتراك سِراج',
+                  iconBackground:
+                      const Color(0xFFFFEBD8),
+                  iconColor:
+                      const Color(0xFFA66D39),
+                  locked: true,
                   onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            const ConsultationScreen(),
-                      ),
+                    _openSubscriptionGate(
+                      'الاستشارة البشرية',
                     );
                   },
                 ),
@@ -344,7 +696,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Icon(
                   Icons.menu_book_rounded,
                   size: 58,
-                  color: Colors.white.withValues(alpha: 0.13),
+                  color:
+                      Colors.white.withValues(alpha: 0.13),
                 ),
               ),
             ),
@@ -357,7 +710,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Icon(
                   Icons.auto_stories_rounded,
                   size: 42,
-                  color: Colors.white.withValues(alpha: 0.10),
+                  color:
+                      Colors.white.withValues(alpha: 0.10),
                 ),
               ),
             ),
@@ -551,7 +905,8 @@ class _HomeScreenState extends State<HomeScreen> {
               width: 54,
               height: 54,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.18),
+                color:
+                    Colors.white.withValues(alpha: 0.18),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -594,7 +949,8 @@ class _HomeScreenState extends State<HomeScreen> {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.15),
+                color:
+                    Colors.white.withValues(alpha: 0.15),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -621,7 +977,8 @@ class _HomeScreenState extends State<HomeScreen> {
           height: 22,
           decoration: BoxDecoration(
             color: purple,
-            borderRadius: BorderRadius.circular(10),
+            borderRadius:
+                BorderRadius.circular(10),
           ),
         ),
 
@@ -650,6 +1007,7 @@ class _HomeScreenState extends State<HomeScreen> {
     required Color iconBackground,
     required Color iconColor,
     required VoidCallback onTap,
+    bool locked = false,
   }) {
     return Material(
       color: Colors.transparent,
@@ -660,61 +1018,94 @@ class _HomeScreenState extends State<HomeScreen> {
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(22),
+            borderRadius:
+                BorderRadius.circular(22),
             border: Border.all(
               color: const Color(0xFFE9E2D9),
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.035),
+                color:
+                    Colors.black.withValues(alpha: 0.035),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
             ],
           ),
-          child: Column(
-            crossAxisAlignment:
-                CrossAxisAlignment.start,
+          child: Stack(
             children: [
-              Container(
-                width: 43,
-                height: 43,
-                decoration: BoxDecoration(
-                  color: iconBackground,
-                  borderRadius:
-                      BorderRadius.circular(14),
-                ),
-                child: Icon(
-                  icon,
-                  color: iconColor,
-                  size: 23,
-                ),
+              Column(
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 43,
+                    height: 43,
+                    decoration: BoxDecoration(
+                      color: iconBackground,
+                      borderRadius:
+                          BorderRadius.circular(14),
+                    ),
+                    child: Icon(
+                      icon,
+                      color: iconColor,
+                      size: 23,
+                    ),
+                  ),
+
+                  const Spacer(),
+
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow:
+                        TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: textDark,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+
+                  const SizedBox(height: 3),
+
+                  Text(
+                    subtitle,
+                    maxLines: 1,
+                    overflow:
+                        TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: textDark
+                          .withValues(alpha: 0.48),
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
               ),
 
-              const Spacer(),
+              // --------------------------------------------------
+              // قفل الخدمة
+              // --------------------------------------------------
 
-              Text(
-                title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: textDark,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w800,
+              if (locked)
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  child: Container(
+                    width: 27,
+                    height: 27,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF1EBFA),
+                      borderRadius:
+                          BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      Icons.lock_rounded,
+                      color: purple,
+                      size: 14,
+                    ),
+                  ),
                 ),
-              ),
-
-              const SizedBox(height: 3),
-
-              Text(
-                subtitle,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: textDark.withValues(alpha: 0.48),
-                  fontSize: 11,
-                ),
-              ),
             ],
           ),
         ),
@@ -730,13 +1121,15 @@ class _HomeScreenState extends State<HomeScreen> {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(23),
+        borderRadius:
+            BorderRadius.circular(23),
         onTap: () {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) => const DhikrListScreen(
+              builder: (_) => DhikrListScreen(
                 title: 'أذكار الصباح',
+                adhkar: DhikrData.morning,
               ),
             ),
           );
@@ -746,13 +1139,15 @@ class _HomeScreenState extends State<HomeScreen> {
           padding: const EdgeInsets.all(17),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(23),
+            borderRadius:
+                BorderRadius.circular(23),
             border: Border.all(
               color: const Color(0xFFE8E0D6),
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.025),
+                color:
+                    Colors.black.withValues(alpha: 0.025),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -764,7 +1159,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 width: 52,
                 height: 52,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFF0CF),
+                  color:
+                      const Color(0xFFFFF0CF),
                   borderRadius:
                       BorderRadius.circular(16),
                 ),
@@ -787,7 +1183,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       style: TextStyle(
                         color: textDark,
                         fontSize: 16,
-                        fontWeight: FontWeight.w800,
+                        fontWeight:
+                            FontWeight.w800,
                       ),
                     ),
 
@@ -807,7 +1204,8 @@ class _HomeScreenState extends State<HomeScreen> {
               Container(
                 width: 38,
                 height: 38,
-                decoration: const BoxDecoration(
+                decoration:
+                    const BoxDecoration(
                   color: Color(0xFFF3EFE7),
                   shape: BoxShape.circle,
                 ),
@@ -834,7 +1232,8 @@ class _HomeScreenState extends State<HomeScreen> {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
+            color:
+                Colors.black.withValues(alpha: 0.08),
             blurRadius: 20,
             offset: const Offset(0, -5),
           ),
@@ -862,12 +1261,14 @@ class _HomeScreenState extends State<HomeScreen> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) => const ProfileScreen(),
+                builder: (_) =>
+                    const ProfileScreen(),
               ),
             );
           }
         },
-        indicatorColor: const Color(0xFFE9E0FA),
+        indicatorColor:
+            const Color(0xFFE9E0FA),
         destinations: const [
           NavigationDestination(
             icon: Icon(
@@ -934,7 +1335,8 @@ class _Star extends StatelessWidget {
     return Icon(
       Icons.star_rounded,
       size: size,
-      color: Colors.white.withValues(alpha: 0.65),
+      color:
+          Colors.white.withValues(alpha: 0.65),
     );
   }
 }
@@ -967,7 +1369,8 @@ class _Planet extends StatelessWidget {
               height: size * 0.38,
               decoration: BoxDecoration(
                 border: Border.all(
-                  color: color.withValues(alpha: 0.55),
+                  color:
+                      color.withValues(alpha: 0.55),
                   width: 2,
                 ),
                 borderRadius:
@@ -984,7 +1387,8 @@ class _Planet extends StatelessWidget {
               color: color,
               boxShadow: [
                 BoxShadow(
-                  color: color.withValues(alpha: 0.35),
+                  color:
+                      color.withValues(alpha: 0.35),
                   blurRadius: 18,
                   spreadRadius: 2,
                 ),

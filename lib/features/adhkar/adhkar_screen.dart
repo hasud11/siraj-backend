@@ -12,42 +12,48 @@ class AdhkarScreen extends StatefulWidget {
 }
 
 class _AdhkarScreenState extends State<AdhkarScreen> {
-  final List<_DhikrCategory> _categories = const [
+  final List<_DhikrCategory> _categories = [
     _DhikrCategory(
       title: 'أذكار الصباح',
       subtitle: 'ابدأ يومك بطمأنينة',
       icon: Icons.wb_sunny_rounded,
       isPremium: false,
+      adhkar: DhikrData.morning,
     ),
     _DhikrCategory(
       title: 'أذكار المساء',
       subtitle: 'اختم يومك بذكر الله',
       icon: Icons.nights_stay_rounded,
       isPremium: false,
+      adhkar: DhikrData.evening,
     ),
     _DhikrCategory(
       title: 'أذكار النوم',
       subtitle: 'أذكار قبل النوم',
       icon: Icons.bedtime_rounded,
       isPremium: true,
+      adhkar: DhikrData.sleep,
     ),
     _DhikrCategory(
       title: 'أذكار الاستيقاظ',
       subtitle: 'ابدأ صباحك بالحمد',
       icon: Icons.alarm_rounded,
       isPremium: false,
+      adhkar: DhikrData.awakening,
     ),
     _DhikrCategory(
       title: 'بعد الصلاة',
       subtitle: 'أذكار ما بعد الصلاة',
       icon: Icons.mosque_rounded,
       isPremium: true,
+      adhkar: DhikrData.afterPrayer,
     ),
     _DhikrCategory(
       title: 'أدعية مختارة',
       subtitle: 'أدعية يومية متنوعة',
       icon: Icons.favorite_rounded,
       isPremium: true,
+      adhkar: DhikrData.selectedDuas,
     ),
   ];
 
@@ -99,8 +105,13 @@ class _AdhkarScreenState extends State<AdhkarScreen> {
     );
   }
 
+  // ============================================================
+  // Header
+  // ============================================================
+
   Widget _buildHeaderCard() {
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
@@ -114,9 +125,7 @@ class _AdhkarScreenState extends State<AdhkarScreen> {
         borderRadius: BorderRadius.circular(26),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withValues(
-              alpha: 0.16,
-            ),
+            color: AppColors.primary.withValues(alpha: 0.16),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
@@ -136,8 +145,7 @@ class _AdhkarScreenState extends State<AdhkarScreen> {
           SizedBox(width: 15),
           Expanded(
             child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'لحظات من السكينة',
@@ -164,6 +172,10 @@ class _AdhkarScreenState extends State<AdhkarScreen> {
     );
   }
 
+  // ============================================================
+  // Category Card
+  // ============================================================
+
   Widget _buildCategoryCard(
     _DhikrCategory category,
   ) {
@@ -175,38 +187,41 @@ class _AdhkarScreenState extends State<AdhkarScreen> {
           borderRadius: BorderRadius.circular(20),
           onTap: () {
             if (category.isPremium) {
-              _showPremiumScreen(category);
-              return;
-            }
-
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => DhikrListScreen(
-                  title: category.title,
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => PremiumLibraryScreen(
+                    categoryTitle: category.title,
+                    adhkar: category.adhkar,
+                  ),
                 ),
-              ),
-            );
+              );
+            } else {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => DhikrListScreen(
+                    title: category.title,
+                    adhkar: category.adhkar,
+                  ),
+                ),
+              );
+            }
           },
           child: Ink(
+            width: double.infinity,
             padding: const EdgeInsets.all(17),
             decoration: BoxDecoration(
               color: AppColors.white,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
                 color: category.isPremium
-                    ? AppColors.gold.withValues(
-                        alpha: 0.30,
-                      )
-                    : AppColors.purple.withValues(
-                        alpha: 0.10,
-                      ),
+                    ? AppColors.gold.withValues(alpha: 0.30)
+                    : AppColors.purple.withValues(alpha: 0.10),
               ),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.primary.withValues(
-                    alpha: 0.04,
-                  ),
+                  color: AppColors.primary.withValues(alpha: 0.04),
                   blurRadius: 12,
                   offset: const Offset(0, 5),
                 ),
@@ -219,12 +234,9 @@ class _AdhkarScreenState extends State<AdhkarScreen> {
                   height: 52,
                   decoration: BoxDecoration(
                     color: category.isPremium
-                        ? AppColors.gold.withValues(
-                            alpha: 0.12,
-                          )
+                        ? AppColors.gold.withValues(alpha: 0.12)
                         : AppColors.purpleLight,
-                    borderRadius:
-                        BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(16),
                   ),
                   child: Icon(
                     category.icon,
@@ -245,12 +257,11 @@ class _AdhkarScreenState extends State<AdhkarScreen> {
                           Flexible(
                             child: Text(
                               category.title,
+                              overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
-                                color:
-                                    AppColors.textDark,
+                                color: AppColors.textDark,
                                 fontSize: 16,
-                                fontWeight:
-                                    FontWeight.w800,
+                                fontWeight: FontWeight.w800,
                               ),
                             ),
                           ),
@@ -258,36 +269,29 @@ class _AdhkarScreenState extends State<AdhkarScreen> {
                             const SizedBox(width: 7),
                             Container(
                               padding:
-                                  const EdgeInsets
-                                      .symmetric(
+                                  const EdgeInsets.symmetric(
                                 horizontal: 7,
                                 vertical: 3,
                               ),
                               decoration: BoxDecoration(
                                 color: AppColors.gold
-                                    .withValues(
-                                  alpha: 0.14,
-                                ),
+                                    .withValues(alpha: 0.14),
                                 borderRadius:
-                                    BorderRadius
-                                        .circular(8),
+                                    BorderRadius.circular(8),
                               ),
                               child: const Row(
-                                mainAxisSize:
-                                    MainAxisSize.min,
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Icon(
                                     Icons.lock_rounded,
                                     size: 11,
-                                    color:
-                                        AppColors.gold,
+                                    color: AppColors.gold,
                                   ),
                                   SizedBox(width: 3),
                                   Text(
                                     'Plus',
                                     style: TextStyle(
-                                      color:
-                                          AppColors.gold,
+                                      color: AppColors.gold,
                                       fontSize: 10,
                                       fontWeight:
                                           FontWeight.w800,
@@ -302,6 +306,7 @@ class _AdhkarScreenState extends State<AdhkarScreen> {
                       const SizedBox(height: 4),
                       Text(
                         category.subtitle,
+                        overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           color: AppColors.textMuted,
                           fontSize: 13,
@@ -310,11 +315,11 @@ class _AdhkarScreenState extends State<AdhkarScreen> {
                     ],
                   ),
                 ),
+                const SizedBox(width: 10),
                 Icon(
                   category.isPremium
                       ? Icons.lock_outline_rounded
-                      : Icons
-                          .arrow_back_ios_new_rounded,
+                      : Icons.arrow_back_ios_new_rounded,
                   size: 18,
                   color: category.isPremium
                       ? AppColors.gold
@@ -327,31 +332,20 @@ class _AdhkarScreenState extends State<AdhkarScreen> {
       ),
     );
   }
-
-  void _showPremiumScreen(
-    _DhikrCategory category,
-  ) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => PremiumLibraryScreen(
-          categoryTitle: category.title,
-        ),
-      ),
-    );
-  }
 }
 
 // ============================================================
-// شاشة المحتوى المدفوع
+// شاشة Plus
 // ============================================================
 
 class PremiumLibraryScreen extends StatelessWidget {
   final String categoryTitle;
+  final List<DhikrItem> adhkar;
 
   const PremiumLibraryScreen({
     super.key,
     required this.categoryTitle,
+    this.adhkar = const [],
   });
 
   @override
@@ -412,15 +406,6 @@ class PremiumLibraryScreen extends StatelessWidget {
           end: Alignment.bottomLeft,
         ),
         borderRadius: BorderRadius.circular(28),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withValues(
-              alpha: 0.18,
-            ),
-            blurRadius: 20,
-            offset: const Offset(0, 9),
-          ),
-        ],
       ),
       child: Column(
         children: [
@@ -428,9 +413,7 @@ class PremiumLibraryScreen extends StatelessWidget {
             width: 68,
             height: 68,
             decoration: BoxDecoration(
-              color: AppColors.gold.withValues(
-                alpha: 0.16,
-              ),
+              color: AppColors.gold.withValues(alpha: 0.16),
               shape: BoxShape.circle,
             ),
             child: const Icon(
@@ -465,6 +448,9 @@ class PremiumLibraryScreen extends StatelessWidget {
   }
 
   Widget _buildPreviewCard() {
+    final DhikrItem? preview =
+        adhkar.isNotEmpty ? adhkar.first : null;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -472,24 +458,21 @@ class PremiumLibraryScreen extends StatelessWidget {
         color: AppColors.white,
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
-          color: AppColors.gold.withValues(
-            alpha: 0.22,
-          ),
+          color: AppColors.gold.withValues(alpha: 0.22),
         ),
       ),
       child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.visibility_rounded,
                 color: AppColors.gold,
                 size: 20,
               ),
-              const SizedBox(width: 8),
-              const Text(
+              SizedBox(width: 8),
+              Text(
                 'معاينة',
                 style: TextStyle(
                   color: AppColors.textDark,
@@ -501,14 +484,16 @@ class PremiumLibraryScreen extends StatelessWidget {
           ),
           const SizedBox(height: 15),
           Container(
+            width: double.infinity,
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: AppColors.cream,
               borderRadius: BorderRadius.circular(16),
             ),
-            child: const Text(
-              'محتوى موثق ومنظم يساعدك على بناء روتين ثابت وهادئ في يومك.',
-              style: TextStyle(
+            child: Text(
+              preview?.text ??
+                  'محتوى موثق ومنظم يساعدك على بناء روتين ثابت وهادئ في يومك.',
+              style: const TextStyle(
                 color: AppColors.textDark,
                 fontSize: 15,
                 height: 1.7,
@@ -546,8 +531,7 @@ class PremiumLibraryScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(22),
       ),
       child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
             'ماذا تحصل عليه مع Plus؟',
@@ -560,19 +544,15 @@ class PremiumLibraryScreen extends StatelessWidget {
           const SizedBox(height: 14),
           ...features.map(
             (feature) => Padding(
-              padding: const EdgeInsets.only(
-                bottom: 12,
-              ),
+              padding: const EdgeInsets.only(bottom: 12),
               child: Row(
                 children: [
                   Container(
                     width: 25,
                     height: 25,
                     decoration: BoxDecoration(
-                      color:
-                          AppColors.success.withValues(
-                        alpha: 0.12,
-                      ),
+                      color: AppColors.success
+                          .withValues(alpha: 0.12),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
@@ -608,8 +588,7 @@ class PremiumLibraryScreen extends StatelessWidget {
       width: double.infinity,
       child: ElevatedButton(
         onPressed: () {
-          ScaffoldMessenger.of(context)
-              .showSnackBar(
+          ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text(
                 'نظام الاشتراكات سيتم ربطه في الخطوة القادمة.',
@@ -629,8 +608,7 @@ class PremiumLibraryScreen extends StatelessWidget {
           elevation: 0,
         ),
         child: const Row(
-          mainAxisAlignment:
-              MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               Icons.auto_awesome_rounded,
@@ -652,15 +630,17 @@ class PremiumLibraryScreen extends StatelessWidget {
 }
 
 // ============================================================
-// شاشة قائمة الأذكار
+// شاشة الأذكار
 // ============================================================
 
 class DhikrListScreen extends StatefulWidget {
   final String title;
+  final List<DhikrItem>? adhkar;
 
   const DhikrListScreen({
     super.key,
     required this.title,
+    this.adhkar,
   });
 
   @override
@@ -677,18 +657,21 @@ class _DhikrListScreenState
   void initState() {
     super.initState();
 
-    _adhkar = _getAdhkarForCategory(
-      widget.title,
+    _adhkar =
+        widget.adhkar ?? _getAdhkarByTitle(widget.title);
+
+    _currentCounts = List<int>.filled(
+      _adhkar.length,
+      0,
     );
 
-    _currentCounts =
-        List<int>.filled(_adhkar.length, 0);
+    debugPrint(
+      'SIRAJ DHIKR: ${widget.title} = ${_adhkar.length} items',
+    );
   }
 
-  List<DhikrItem> _getAdhkarForCategory(
-    String title,
-  ) {
-    switch (title) {
+  List<DhikrItem> _getAdhkarByTitle(String title) {
+    switch (title.trim()) {
       case 'أذكار الصباح':
         return DhikrData.morning;
 
@@ -708,7 +691,10 @@ class _DhikrListScreenState
         return DhikrData.selectedDuas;
 
       default:
-        return const [];
+        debugPrint(
+          'SIRAJ DHIKR: unknown category "$title"',
+        );
+        return <DhikrItem>[];
     }
   }
 
@@ -753,21 +739,23 @@ class _DhikrListScreenState
     );
   }
 
+  // ============================================================
+  // Empty State
+  // ============================================================
+
   Widget _buildEmptyState() {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(30),
         child: Column(
-          mainAxisAlignment:
-              MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
               width: 78,
               height: 78,
               decoration: BoxDecoration(
                 color: AppColors.purpleLight,
-                borderRadius:
-                    BorderRadius.circular(24),
+                borderRadius: BorderRadius.circular(24),
               ),
               child: const Icon(
                 Icons.auto_awesome_rounded,
@@ -777,7 +765,7 @@ class _DhikrListScreenState
             ),
             const SizedBox(height: 20),
             const Text(
-              'سيتم إضافة هذا القسم قريبًا',
+              'لا توجد أذكار في هذا القسم',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: AppColors.textDark,
@@ -786,13 +774,12 @@ class _DhikrListScreenState
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'نقوم بإعداد المحتوى الموثق لكل قسم قبل نشره.',
+            Text(
+              'القسم: ${widget.title}',
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                 color: AppColors.textMuted,
                 fontSize: 14,
-                height: 1.6,
               ),
             ),
           ],
@@ -801,194 +788,231 @@ class _DhikrListScreenState
     );
   }
 
+  // ============================================================
+  // Dhikr Card
+  // ============================================================
+
   Widget _buildDhikrCard(
     DhikrItem dhikr,
     int index,
   ) {
-    final current = _currentCounts[index];
+    final int current = _currentCounts[index];
 
-    final completed =
-        current >= dhikr.count;
+    final int targetCount =
+        dhikr.count > 0 ? dhikr.count : 1;
 
-    final progress = dhikr.count > 0
-        ? (current / dhikr.count)
-            .clamp(0.0, 1.0)
-        : 0.0;
+    final bool completed =
+        current >= targetCount;
+
+    final double progress =
+        (current / targetCount).clamp(0.0, 1.0);
 
     return Padding(
-      padding: const EdgeInsets.only(
-        bottom: 14,
-      ),
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: AppColors.white,
-          borderRadius:
-              BorderRadius.circular(22),
-          boxShadow: [
-            BoxShadow(
-              color:
-                  AppColors.primary.withValues(
-                alpha: 0.05,
-              ),
-              blurRadius: 14,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
-          children: [
-            Text(
-              dhikr.title,
-              style: const TextStyle(
-                color: AppColors.primary,
-                fontSize: 14,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              dhikr.text,
-              style: const TextStyle(
-                color: AppColors.textDark,
-                fontSize: 19,
-                height: 1.9,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 10,
-              ),
+      padding: const EdgeInsets.only(bottom: 14),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final double cardWidth = constraints.maxWidth;
+
+          return SizedBox(
+            width: cardWidth,
+            child: Container(
+              width: cardWidth,
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: AppColors.cream,
-                borderRadius:
-                    BorderRadius.circular(12),
-              ),
-              child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.menu_book_rounded,
-                        size: 17,
-                        color: AppColors.textMuted,
-                      ),
-                      const SizedBox(width: 7),
-                      Expanded(
-                        child: Text(
-                          dhikr.source,
-                          style: const TextStyle(
-                            color:
-                                AppColors.textMuted,
-                            fontSize: 12,
-                            height: 1.4,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'التصنيف: ${dhikr.grade}',
-                    style: const TextStyle(
-                      color: AppColors.success,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                    ),
+                color: AppColors.white,
+                borderRadius: BorderRadius.circular(22),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary
+                        .withValues(alpha: 0.05),
+                    blurRadius: 14,
+                    offset: const Offset(0, 6),
                   ),
                 ],
               ),
-            ),
-            const SizedBox(height: 16),
-            ClipRRect(
-              borderRadius:
-                  BorderRadius.circular(20),
-              child: LinearProgressIndicator(
-                value: progress,
-                minHeight: 7,
-                backgroundColor:
-                    AppColors.purpleLight,
-                valueColor:
-                    const AlwaysStoppedAnimation<
-                        Color>(
-                  AppColors.purple,
-                ),
-              ),
-            ),
-            const SizedBox(height: 15),
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
+              child: Column(
+                crossAxisAlignment:
+                    CrossAxisAlignment.stretch,
+                children: [
+                  // عنوان الذكر
+                  Text(
+                    dhikr.title,
+                    textAlign: TextAlign.right,
+                    softWrap: true,
+                    style: const TextStyle(
+                      color: AppColors.primary,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  // نص الذكر
+                  Text(
+                    dhikr.text,
+                    textAlign: TextAlign.right,
+                    softWrap: true,
+                    style: const TextStyle(
+                      color: AppColors.textDark,
+                      fontSize: 19,
+                      height: 1.9,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // المصدر والتصنيف
+                  Container(
+                    width: cardWidth,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.cream,
+                      borderRadius:
+                          BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      crossAxisAlignment:
+                          CrossAxisAlignment.stretch,
+                      children: [
+                        Row(
+                          crossAxisAlignment:
+                              CrossAxisAlignment.start,
+                          children: [
+                            const Icon(
+                              Icons.menu_book_rounded,
+                              size: 17,
+                              color: AppColors.textMuted,
+                            ),
+                            const SizedBox(width: 7),
+                            Expanded(
+                              child: Text(
+                                dhikr.source,
+                                softWrap: true,
+                                style: const TextStyle(
+                                  color:
+                                      AppColors.textMuted,
+                                  fontSize: 12,
+                                  height: 1.4,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'التصنيف: ${dhikr.grade}',
+                          softWrap: true,
+                          style: const TextStyle(
+                            color: AppColors.success,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // شريط التقدم
+                  SizedBox(
+                    width: cardWidth,
+                    child: ClipRRect(
+                      borderRadius:
+                          BorderRadius.circular(20),
+                      child: LinearProgressIndicator(
+                        value: progress,
+                        minHeight: 7,
+                        backgroundColor:
+                            AppColors.purpleLight,
+                        valueColor:
+                            const AlwaysStoppedAnimation<
+                                Color>(
+                          AppColors.purple,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 15),
+
+                  // حالة الذكر
+                  Text(
                     completed
                         ? 'تم بحمد الله ✓'
-                        : 'التكرار: $current / ${dhikr.count}',
+                        : 'التكرار: $current / $targetCount',
+                    textAlign: TextAlign.right,
+                    softWrap: true,
                     style: TextStyle(
                       color: completed
                           ? AppColors.success
                           : AppColors.textMuted,
                       fontSize: 14,
-                      fontWeight:
-                          FontWeight.w600,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                ),
-                ElevatedButton(
-                  onPressed: completed
-                      ? null
-                      : () {
-                          setState(() {
-                            _currentCounts[
-                                    index] =
-                                current + 1;
-                          });
-                        },
-                  style:
-                      ElevatedButton.styleFrom(
-                    backgroundColor:
-                        AppColors.primary,
-                    foregroundColor:
-                        Colors.white,
-                    disabledBackgroundColor:
-                        AppColors.purpleLight,
-                    disabledForegroundColor:
-                        AppColors.success,
-                    padding:
-                        const EdgeInsets.symmetric(
-                      horizontal: 22,
-                      vertical: 12,
-                    ),
-                    shape:
-                        RoundedRectangleBorder(
-                      borderRadius:
-                          BorderRadius.circular(
-                        14,
+
+                  const SizedBox(height: 12),
+
+                  // زر الذكر
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: completed
+                          ? null
+                          : () {
+                              setState(() {
+                                _currentCounts[index] =
+                                    current + 1;
+                              });
+                            },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor:
+                            AppColors.primary,
+                        foregroundColor: Colors.white,
+                        disabledBackgroundColor:
+                            AppColors.purpleLight,
+                        disabledForegroundColor:
+                            AppColors.success,
+                        minimumSize:
+                            const Size.fromHeight(50),
+                        padding:
+                            const EdgeInsets.symmetric(
+                          vertical: 12,
+                        ),
+                        shape:
+                            RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.circular(14),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: Text(
+                        completed ? 'تم ✓' : 'ذكر',
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                     ),
                   ),
-                  child: Text(
-                    completed ? 'تم' : 'ذكر',
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
 }
 
 // ============================================================
-// نموذج قسم الأذكار
+// نموذج القسم
 // ============================================================
 
 class _DhikrCategory {
@@ -996,11 +1020,13 @@ class _DhikrCategory {
   final String subtitle;
   final IconData icon;
   final bool isPremium;
+  final List<DhikrItem> adhkar;
 
   const _DhikrCategory({
     required this.title,
     required this.subtitle,
     required this.icon,
     required this.isPremium,
+    required this.adhkar,
   });
 }

@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:http/http.dart' as http;
 
 class SirajFreeLimitException implements Exception {
@@ -70,7 +71,59 @@ class AiService {
   final FirebaseAuth _auth =
       FirebaseAuth.instance;
 
+  final FirebaseAppCheck _appCheck =
+      FirebaseAppCheck.instance;
+
   SirajUsage? lastUsage;
+
+  // ==========================================================
+  // الحصول على Firebase App Check Token
+  // ==========================================================
+
+  Future<String?> _getAppCheckToken() async {
+    try {
+      final token =
+          await _appCheck.getToken();
+
+      if (token == null ||
+          token.trim().isEmpty) {
+        return null;
+      }
+
+      return token.trim();
+    } catch (e) {
+      // لا نكشف تفاصيل App Check للمستخدم.
+      // في وضع Audit الحالي يستطيع الطلب الاستمرار،
+      // وبعد تفعيل Enforcement على Render سيتم رفض
+      // الطلبات التي لا تحمل App Check صالحًا.
+      return null;
+    }
+  }
+
+  // ==========================================================
+  // إنشاء Headers آمنة للاتصال مع Render
+  // ==========================================================
+
+  Future<Map<String, String>> _buildHeaders(
+    String idToken,
+  ) async {
+    final headers = <String, String>{
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'Authorization': 'Bearer $idToken',
+    };
+
+    final appCheckToken =
+        await _getAppCheckToken();
+
+    if (appCheckToken != null &&
+        appCheckToken.isNotEmpty) {
+      headers['X-Firebase-AppCheck'] =
+          appCheckToken;
+    }
+
+    return headers;
+  }
 
   // ==========================================================
   // إرسال سؤال إلى سِراج
@@ -108,8 +161,7 @@ class AiService {
     }
 
     // ========================================================
-    // مهم:
-    // هذا هو المسار الموجود فعليًا في index.js
+    // المسار الموجود فعليًا في index.js
     // ========================================================
 
     final uri = Uri.parse(
@@ -120,17 +172,17 @@ class AiService {
         _cleanHistory(history);
 
     try {
+      // ======================================================
+      // Firebase ID Token + App Check Token
+      // ======================================================
+
+      final headers =
+          await _buildHeaders(idToken);
+
       final response = await http
           .post(
             uri,
-            headers: {
-              'Content-Type':
-                  'application/json',
-              'Accept':
-                  'application/json',
-              'Authorization':
-                  'Bearer $idToken',
-            },
+            headers: headers,
             body: jsonEncode({
               'message': cleanPrompt,
               'history': cleanHistory,
@@ -364,16 +416,18 @@ class AiService {
     );
 
     try {
+      // ======================================================
+      // Firebase ID Token + App Check Token
+      // ======================================================
+
+      final headers =
+          await _buildHeaders(idToken);
+
       final response =
           await http
               .get(
                 uri,
-                headers: {
-                  'Accept':
-                      'application/json',
-                  'Authorization':
-                      'Bearer $idToken',
-                },
+                headers: headers,
               )
               .timeout(usageTimeout);
 
@@ -420,13 +474,6 @@ class AiService {
 
   // ==========================================================
   // تحويل /api/usage
-  //
-  // Backend يعيد:
-  //
-  // accountType
-  // questionsUsed
-  // questionsLimit
-  // questionsRemaining
   // ==========================================================
 
   SirajUsage _usageFromServer(
@@ -484,8 +531,6 @@ class AiService {
 
   // ==========================================================
   // تحديث الاستخدام بعد نجاح المحادثة
-  //
-  // Backend يعيد usage داخل response
   // ==========================================================
 
   void _updateUsageFromChatResponse(
