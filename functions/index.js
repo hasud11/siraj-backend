@@ -1663,10 +1663,6 @@ app.listen(
     );
 
     console.log(
-      `App Check replay protection: ${APP_CHECK_REPLAY_PROTECTION}
-      );
-      
-    console.log(
       `App Check replay protection: ${APP_CHECK_REPLAY_PROTECTION}`
     );
   }
