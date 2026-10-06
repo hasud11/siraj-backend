@@ -892,11 +892,16 @@ app.get(
             0
           ),
       });
-    } catch (error) {
-      console.error(
-        "Usage Error:",
-        error.message
-      );
+   } catch (error) {
+  console.error("========== SIRAJ AI ERROR ==========");
+  console.error("message:", error?.message);
+  console.error("status:", error?.status);
+  console.error("code:", error?.code);
+  console.error("type:", error?.type);
+  console.error("name:", error?.name);
+  console.error("====================================");
+
+  // باقي معالجة الأخطاء الموجودة لديك
 
       return res.status(500).json({
         success: false,
