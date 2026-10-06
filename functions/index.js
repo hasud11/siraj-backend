@@ -920,16 +920,14 @@ app.post(
   "/api/ai/chat",
   verifyFirebaseToken,
   async (req, res) => {
-
     console.log("🔥 /api/ai/chat REQUEST RECEIVED");
     console.log("🔥 UID:", req.user?.uid || "NO UID");
 
     try {
-    let questionReserved =
-      false;
-
-    const uid =
-      req.user.uid;
+      const {
+        message,
+        history,
+      } = req.body;
 
     const requestId =
       req.requestId;
