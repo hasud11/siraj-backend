@@ -916,17 +916,15 @@ app.get(
 // ======================================================
 // Siraj AI Chat API
 // ======================================================
-
 app.post(
   "/api/ai/chat",
-
-  aiLimiter,
-
   verifyFirebaseToken,
-
-  verifyFirebaseAppCheck,
-
   async (req, res) => {
+
+    console.log("🔥 /api/ai/chat REQUEST RECEIVED");
+    console.log("🔥 UID:", req.user?.uid || "NO UID");
+
+    try {
     let questionReserved =
       false;
 
