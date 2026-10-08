@@ -33,6 +33,15 @@ app.use((req, res, next) => {
     "IP:",
     req.ip
   );
+  res.on("finish", () => {
+  console.log(
+    "🌐 RESPONSE:",
+    req.method,
+    req.originalUrl,
+    "STATUS:",
+    res.statusCode
+  );
+});
   next();
 });
 
