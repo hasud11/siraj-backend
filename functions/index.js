@@ -664,30 +664,37 @@ async function verifyFirebaseToken(
 
     const authHeader =
       req.headers.authorization;
+if (
+  !authHeader ||
+  !authHeader.startsWith(
+    "Bearer "
+  )
+) {
+  console.warn(
+    `[AUTH_REQUIRED] request=${req.requestId} authorizationPresent=${!!authHeader}`
+  );
 
-    if (
-      !authHeader ||
-      !authHeader.startsWith(
-        "Bearer "
-      )
-    ) {
-      return res.status(401).json({
-        success: false,
-        error: "AUTH_REQUIRED",
-      });
-    }
+  return res.status(401).json({
+    success: false,
+    error: "AUTH_REQUIRED",
+  });
+}
 
     const idToken =
       authHeader
         .substring(7)
         .trim();
 
-    if (!idToken) {
-      return res.status(401).json({
-        success: false,
-        error: "AUTH_REQUIRED",
-      });
-    }
+ if (!idToken) {
+  console.warn(
+    `[AUTH_REQUIRED] request=${req.requestId} tokenEmpty=true`
+  );
+
+  return res.status(401).json({
+    success: false,
+    error: "AUTH_REQUIRED",
+  });
+}
 
     const decodedToken =
       await firebaseAuth.verifyIdToken(
