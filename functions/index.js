@@ -731,12 +731,16 @@ async function verifyFirebaseAppCheck(
     req.headers["x-firebase-appcheck"];
 
   if (!appCheckToken) {
-    if (REQUIRE_APP_CHECK) {
-      return res.status(401).json({
-        success: false,
-        error: "APP_CHECK_REQUIRED",
-      });
-    }
+  console.warn(
+    `[APP_CHECK_REQUIRED] request=${req.requestId} appCheckPresent=false`
+  );
+
+  if (REQUIRE_APP_CHECK) {
+    return res.status(401).json({
+      success: false,
+      error: "APP_CHECK_REQUIRED",
+    });
+  }
 
     console.warn(
       `[APP_CHECK_AUDIT] Missing token | request=${req.requestId}`
