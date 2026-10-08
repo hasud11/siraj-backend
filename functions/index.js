@@ -33,7 +33,7 @@ app.use((req, res, next) => {
     "IP:",
     req.ip
   );
-  res.on("finish", () => {
+ res.on("finish", () => {
   console.log(
     "🌐 RESPONSE:",
     req.method,
@@ -41,7 +41,7 @@ app.use((req, res, next) => {
     "STATUS:",
     res.statusCode
   );
-});
+}); 
   next();
 });
 
